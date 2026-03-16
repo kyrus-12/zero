@@ -1904,64 +1904,73 @@ footer.global-nav {
     
     
 <div id="phaseLabModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[80] p-4">
-    
-    <div class="bg-gray-900 border border-cyan-500 rounded-3xl p-8 w-full max-w-7xl shadow-2xl relative flex flex-col max-h-[95vh] overflow-hidden">
+    <div class="bg-gray-900 border border-cyan-500 rounded-3xl p-6 md:p-8 w-full max-w-7xl shadow-2xl relative flex flex-col max-h-[95vh] overflow-hidden">
         
-        <h2 class="text-2xl font-bold text-cyan-400 mb-6 shrink-0" style="font-family: 'Orbitron';">Molecular Phase Lab</h2>
-        
-        <button onclick="closePhaseLab()" class="absolute top-0 right-0 m-4 text-white/50 hover:text-white text-3xl transition-colors z-10">
-            &times;
-        </button>
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <h2 class="text-2xl font-bold text-cyan-400" style="font-family: 'Orbitron';">Molecular Phase Lab</h2>
+            <button onclick="closePhaseLab()" class="text-white/50 hover:text-white text-3xl transition-colors">
+                &times;
+            </button>
+        </div>
 
-        <div class="main-layout grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch flex-1 overflow-y-auto pr-2">
+        <div class="main-layout flex-1 overflow-y-auto pr-2 custom-scrollbar">
             
-            <div class="flex flex-col items-center justify-center bg-black/20 p-4 rounded-2xl border border-white/5 shrink-0">
-                <div class="beaker" id="phase-beaker" style="width: 260px; height:380px; border: 6px solid #fff; border-top: none; border-radius: 0 0 30px 30px; position: relative; overflow: hidden; background: rgba(255,255,255,0.03); box-shadow: 0 0 20px rgba(0,0,0,0.5);"></div>
-                <p class="mt-4 text-xs text-white/40 font-mono tracking-widest uppercase">Reaction Chamber</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                
+                <div class="flex flex-col items-center justify-center bg-black/40 p-6 rounded-2xl border border-white/5 min-h-[450px]">
+                    <div class="beaker" id="phase-beaker" style="width: 260px; height:380px; border: 6px solid #fff; border-top: none; border-radius: 0 0 30px 30px; position: relative; overflow: hidden; background: rgba(255,255,255,0.03); box-shadow: 0 0 30px rgba(0,255,255,0.1);"></div>
+                    <p class="mt-4 text-xs text-cyan-500/50 font-mono tracking-widest uppercase">Molecular Viewport</p>
+                </div>
+                 
+                <div class="control-panel flex flex-col gap-4">
+                    <div class="status-box bg-cyan-950/20 p-5 rounded-2xl text-center border border-cyan-500/20">
+                        <span class="text-[10px] text-cyan-500 uppercase tracking-widest">Current Kinetic State</span>
+                        <span id="phase-process" class="block mt-1 font-extrabold text-yellow-400 text-xl uppercase tracking-tighter">SOLID LATTICE</span>
+                    </div>
+
+                    <div id="phase-safety-puter" class="p-3 bg-red-900/10 border border-red-500/30 rounded-xl text-red-200 text-[11px] font-mono leading-tight">
+                        🛡️ <b>SAFETY LOG:</b> Protective eyewear required. Monitor pressure release valves during gas transition.
+                    </div>
+
+                    <div class="slow-mo-section bg-slate-800/50 p-4 rounded-xl flex items-center justify-between border border-white/5">
+                        <span class="text-sm text-white font-mono">⏱️ TIME SCALING</span>
+                        <input type="range" id="phaseSpeed" min="0.05" max="1" step="0.05" value="1" class="w-32 accent-cyan-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="bg-orange-900/20 border border-orange-500/50 text-orange-200 p-3 rounded-xl text-xs hover:bg-orange-500/30 transition-all font-bold uppercase" onclick="triggerPhase('melting')">Melting<br><span class="opacity-50 font-normal">(S → L)</span></button>
+                        <button class="bg-blue-900/20 border border-blue-500/50 text-blue-200 p-3 rounded-xl text-xs hover:bg-blue-500/30 transition-all font-bold uppercase" onclick="triggerPhase('freezing')">Freezing<br><span class="opacity-50 font-normal">(L → S)</span></button>
+                        <button class="bg-orange-900/20 border border-orange-500/50 text-orange-200 p-3 rounded-xl text-xs hover:bg-orange-500/30 transition-all font-bold uppercase" onclick="triggerPhase('evaporation')">Evaporation<br><span class="opacity-50 font-normal">(L → G)</span></button>
+                        <button class="bg-blue-900/20 border border-blue-500/50 text-blue-200 p-3 rounded-xl text-xs hover:bg-blue-500/30 transition-all font-bold uppercase" onclick="triggerPhase('condensation')">Condensation<br><span class="opacity-50 font-normal">(G → L)</span></button>
+                        <button class="bg-orange-900/20 border border-orange-500/50 text-orange-200 p-3 rounded-xl text-xs hover:bg-orange-500/30 transition-all font-bold uppercase" onclick="triggerPhase('sublimation')">Sublimation<br><span class="opacity-50 font-normal">(S → G)</span></button>
+                        <button class="bg-blue-900/20 border border-blue-500/50 text-blue-200 p-3 rounded-xl text-xs hover:bg-blue-500/30 transition-all font-bold uppercase" onclick="triggerPhase('deposition')">Deposition<br><span class="opacity-50 font-normal">(G → S)</span></button>
+                    </div>
+
+                    <button class="bg-slate-800 w-full py-4 rounded-xl text-white font-bold hover:bg-red-900/40 transition-all mt-auto border border-white/10" onclick="resetPhaseSystem()">Initialize System Reset</button>
+                </div>
             </div>
-             
-            <div class="control-panel flex flex-col gap-3 overflow-y-auto">
-                <div class="status-box bg-white/10 p-4 rounded-2xl text-center border border-white/10 shrink-0">
-                    <span class="text-[10px] text-cyan-500 uppercase tracking-widest">Current state</span>
-                    <span id="phase-process" class="block mt-1 font-extrabold text-yellow-400 text-lg uppercase">SOLID LATTICE</span>
-                </div>
 
-                <div class="slow-mo-section bg-slate-800 p-3 rounded-xl flex items-center justify-between shrink-0">
-                    <span class="text-sm text-white">⏱️ Time</span>
-                    <input type="range" id="phaseSpeed" min="0.05" max="1" step="0.05" value="1" class="w-28">
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button class="bg-orange-900/20 border border-orange-500/50 text-orange-200 p-2 rounded-lg text-xs hover:bg-orange-500/20 transition-all" onclick="triggerPhase('melting')">Melting<br>(S → L)</button>
-                    <button class="bg-blue-900/20 border border-blue-500/50 text-blue-200 p-2 rounded-lg text-xs hover:bg-blue-500/20 transition-all" onclick="triggerPhase('freezing')">Freezing<br>(L → S)</button>
-                    <button class="bg-orange-900/20 border border-orange-500/50 text-orange-200 p-2 rounded-lg text-xs hover:bg-orange-500/20 transition-all" onclick="triggerPhase('evaporation')">Evaporation<br>(L → G)</button>
-                    <button class="bg-blue-900/20 border border-blue-500/50 text-blue-200 p-2 rounded-lg text-xs hover:bg-blue-500/20 transition-all" onclick="triggerPhase('condensation')">Condensation<br>(G → L)</button>
-                    <button class="bg-orange-900/20 border border-orange-500/50 text-orange-200 p-2 rounded-lg text-xs hover:bg-orange-500/20 transition-all" onclick="triggerPhase('sublimation')">Sublimation<br>(S → G)</button>
-                    <button class="bg-blue-900/20 border border-blue-500/50 text-blue-200 p-2 rounded-lg text-xs hover:bg-blue-500/20 transition-all" onclick="triggerPhase('deposition')">Deposition<br>(G → S)</button>
-                </div>
-
-                <button class="bg-slate-700 w-full py-3 rounded-xl text-white font-bold hover:bg-red-900/40 transition-all mt-2 border border-white/10" onclick="resetPhaseSystem()">Reset System</button>
-            </div>
-
-            <div class="feedback-panel flex flex-col min-h-0">
-                <div class="bg-black/60 rounded-2xl border border-cyan-500/30 p-6 shadow-xl flex flex-col h-full">
-                    <div class="flex items-center gap-2 mb-4 shrink-0">
-                        <span class="relative flex h-2 w-2">
+            <div class="feedback-panel">
+                <div class="bg-black/60 rounded-2xl border border-cyan-500/30 p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none h-1/2 animate-pulse"></div>
+                    
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="relative flex h-3 w-3">
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
                         </span>
-                        <div class="text-[10px] text-cyan-500/70 font-mono uppercase tracking-[3px]">Observation Log</div>
+                        <div class="text-[11px] text-cyan-400 font-mono uppercase tracking-[4px]">Observation Log & AI Feedback</div>
                     </div>
                     
-                    <div id="phase-feedback" class="text-lg md:text-xl text-white/90 font-medium leading-relaxed italic overflow-y-auto flex-1 pr-2 custom-scrollbar">
-                        Ready for analysis. Select a thermal transition to begin molecular observation.
+                    <div id="phase-feedback" class="text-lg text-white/90 font-medium leading-relaxed italic min-h-[100px]">
+                        AI Terminal Standby. Please select a thermal transition to begin molecular observation.
                     </div>
                 </div>
             </div>
 
-        </div>
-    </div>
+        </div> </div>
 </div>
+    
   
 <div id="particlesLabModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[80] p-4 overflow-hidden">
     <div class="bg-gray-900 border border-cyan-500 rounded-3xl p-6 w-full max-w-6xl shadow-2xl relative flex flex-col max-h-[95vh]">
