@@ -1617,17 +1617,21 @@ footer.global-nav {
 </div>
 </div>
   
-  <div id="elementsLabModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[70] p-4">
-    <div class="bg-gray-900 border border-cyan-500 rounded-2xl p-6 w-full max-w-4xl shadow-2xl overflow-y-auto max-h-[95vh]">
+ <div id="elementsLabModal" class="fixed inset-0 bg-black/90 hidden z-[70] p-4 overflow-auto">
+    
+    <div class="bg-gray-900 border border-cyan-500 rounded-2xl p-6 mx-auto my-auto shadow-2xl min-w-fit">
+        
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold text-cyan-400">Mystery Matter Lab</h2>
             <button class="text-gray-400 hover:text-white" onclick="closeElementsLab()">✕</button>
         </div>
 
-        <div id="periodicTableGrid" class="periodic-grid"></div>
+        <div class="overflow-x-auto pb-4">
+            <div id="periodicTableGrid" class="periodic-grid min-w-[800px]"></div>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div id="atom-canvas" class="atom-canvas">
+            <div id="atom-canvas" class="atom-canvas min-w-[300px] min-h-[300px] relative">
                 <div class="nucleus-static"></div>
             </div>
             
@@ -1644,13 +1648,11 @@ footer.global-nav {
                     <button class="bg-yellow-900/20 border border-yellow-500/50 text-yellow-200 p-2 rounded" onclick="updateElementsLab(0, -1)">- Electron</button>
                 </div>
                 <button class="w-full p-2 bg-gray-800 text-gray-400 text-xs rounded" onclick="resetElementsGame()">RESET ALL</button>
-                
             </div>
         </div>
         <div id="el-msg" class="text-center font-bold text-2xl md:text-3xl mt-8 min-h-[40px] text-white"></div>
     </div>
-    </div>
-  </div>
+</div>
 
   
 <div id="solutionLabModal" class="fixed inset-0 bg-black/90 hidden items-start md:items-center justify-center z-[70] p-2 md:p-4 overflow-y-auto">
