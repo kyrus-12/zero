@@ -1644,9 +1644,11 @@ footer.global-nav {
                     <button class="bg-yellow-900/20 border border-yellow-500/50 text-yellow-200 p-2 rounded" onclick="updateElementsLab(0, -1)">- Electron</button>
                 </div>
                 <button class="w-full p-2 bg-gray-800 text-gray-400 text-xs rounded" onclick="resetElementsGame()">RESET ALL</button>
-                <div id="el-msg" class="text-center font-bold h-6"></div>
+                
             </div>
         </div>
+        <div id="el-msg" class="text-center font-bold text-2xl md:text-3xl mt-8 min-h-[40px] text-white"></div>
+    </div>
     </div>
   </div>
 
@@ -1935,10 +1937,11 @@ footer.global-nav {
 
                 <button class="btn bg-slate-600 w-full py-2 rounded-xl text-white font-bold hover:bg-slate-500 transition-colors" onclick="resetPhaseSystem()">Reset System</button>
                 <div class="text-[10px] text-white/30 font-mono italic">Waiting for phase trigger...</div>
-                <div id="phase-feedback" class="mt-2 min-h-[120px] bg-black/40 rounded-xl border border-white/5 p-3 overflow-y-auto">
- 
+              
             </div>
                 
+            </div>
+        <div id="phase-feedback" class="mt-6 w-full bg-black/40 rounded-2xl border border-cyan-500/30 p-6 overflow-y-auto text-xl md:text-2xl text-white leading-relaxed text-center">
             </div>
         </div>
     </div>
@@ -1956,7 +1959,9 @@ footer.global-nav {
     </header>
 
     <div class="lab-container flex-1 flex flex-col p-[10px] w-full items-center">
-        <div id="particles-feedback" class="mt-4 min-h-[40px]"></div>
+       <div id="particles-feedback" class="mt-4 mb-4 min-h-[60px] text-center font-bold text-2xl md:text-3xl text-[#00ffcc] tracking-wide animate-pulse uppercase" style="font-family: 'Courier New', monospace;">
+    SYSTEM READY
+</div>
         <canvas id="physicsCanvas" class="bg-black border border-[#00ffcc] rounded-[5px] w-full h-[50vh] shadow-[inset_0_0_20px_rgba(0,255,200,0.1)]"></canvas>
         
         <div class="ui-panel mt-[15px] w-full grid grid-cols-1 md:grid-cols-2 gap-[12px]">
@@ -2014,7 +2019,6 @@ footer.global-nav {
                         <span>100mL</span>
                     </button>
                     
-                    <div id="concen-feedback" class="min-h-[60px]"></div>
 
                     <div class="pt-4 border-t border-white/10">
                         <button class="w-full bg-slate-700 hover:bg-yellow-500 hover:text-black py-3 rounded-xl font-bold transition-all" onclick="resetLab()">
@@ -2047,6 +2051,8 @@ footer.global-nav {
                             <span class="text-xl font-mono text-yellow-400" id="formula">0.000</span>
                         </div>
                     </div>
+                    <div id="concen-feedback" class="mt-8 p-6 bg-blue-900/20 border border-blue-500/30 rounded-2xl text-center text-2xl md:text-3xl font-bold text-white min-h-[80px] flex items-center justify-center">
+    </div>
                 </div>
             </div>
           </div>
