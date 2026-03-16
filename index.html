@@ -2011,110 +2011,102 @@ footer.global-nav {
      
   
 
-<div id="concenLabModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/95 backdrop-blur-md p-2 md:p-4">
+<div id="concenLabModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/90 backdrop-blur-md p-2 md:p-4 overflow-y-auto">
     
-    <div class="bg-[#0f172a] border border-blue-500 rounded-2xl md:rounded-[2rem] w-full max-w-6xl relative shadow-2xl flex flex-col max-h-[98vh] md:max-h-[95vh] overflow-hidden">
+    <div class="bg-[#0f172a] border border-blue-500/30 rounded-[2rem] w-full max-w-5xl p-4 md:p-8 relative shadow-2xl my-auto max-h-[95vh] md:max-h-[90vh] overflow-y-auto">
         
-        <div class="p-4 md:p-8 md:pb-4 shrink-0 flex justify-between items-center border-b border-white/10">
+        <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
             <div>
-                <h1 class="text-xl md:text-3xl font-bold text-blue-400 flex items-center gap-2 md:gap-3" style="font-family: 'Orbitron', sans-serif;">
+                <h1 class="text-xl md:text-3xl font-bold text-blue-400 flex items-center gap-3" style="font-family: 'Orbitron', sans-serif;">
                     Concentration Explorer
                 </h1>
-                <p class="text-gray-500 text-[9px] md:text-xs uppercase tracking-[0.2em] mt-1">Molar Analysis Terminal</p>
+                <p class="text-gray-500 text-[10px] uppercase tracking-widest mt-1">Molar Analysis Terminal</p>
             </div>
-            <button onclick="closeConcenLab()" class="text-white/50 hover:text-white text-3xl md:text-4xl transition-colors p-2">
+            <button onclick="closeConcenLab()" class="text-white/50 hover:text-white text-3xl transition-colors p-2">
                 &times;
             </button>
         </div>
 
-        <div id="warning" class="absolute top-20 md:top-28 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 md:px-8 py-2 md:py-3 rounded-full text-sm md:text-base font-bold shadow-[0_0_20px_rgba(220,38,38,0.5)] z-50 transition-all duration-300 pointer-events-none text-center whitespace-nowrap" style="visibility: hidden; opacity: 0;">
-            ⚠️ BEAKER OVERFLOW!
+        <div id="warning" class="absolute top-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg z-50 transition-all duration-300 pointer-events-none" style="visibility: hidden; opacity: 0;">
+            ⚠️ BEAKER OVERFLOW: Solute Lost!
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-start">
             
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 mb-6 md:mb-8">
+            <div class="md:col-span-4 space-y-4">
+                <div class="bg-white/5 border border-white/10 p-5 md:p-6 rounded-2xl shadow-inner">
+                    <h3 class="text-white font-bold mb-4 uppercase tracking-wider text-[10px] opacity-70">Reagent Dosage</h3>
+                    
+                    <button class="w-full bg-green-600 hover:bg-green-500 hover:scale-[1.02] active:scale-95 text-white font-bold py-4 rounded-xl mb-4 shadow-lg transition-all flex justify-between px-6 items-center" onclick="addSolute()">
+                        <span class="text-sm md:text-base">+ Add Solute</span>
+                        <span class="bg-black/20 px-2 py-1 rounded-lg text-xs font-mono">5g</span>
+                    </button>
+
+                    <button class="w-full bg-blue-600 hover:bg-blue-500 hover:scale-[1.02] active:scale-95 text-white font-bold py-4 rounded-xl mb-6 shadow-lg transition-all flex justify-between px-6 items-center" onclick="addWater()">
+                        <span class="text-sm md:text-base">+ Add Water</span>
+                        <span class="bg-black/20 px-2 py-1 rounded-lg text-xs font-mono">100mL</span>
+                    </button>
+
+                    <div class="pt-4 border-t border-white/10">
+                        <button class="w-full bg-slate-700 hover:bg-red-900/40 hover:text-red-400 py-3 rounded-xl font-bold transition-all text-xs uppercase tracking-widest" onclick="resetLab()">
+                            Reset Experiment
+                        </button>
+                    </div>
+                </div>
                 
-                <div class="lg:col-span-4 space-y-4 md:space-y-6 order-2 lg:order-1">
-                    <div class="bg-white/5 border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-inner">
-                        <h3 class="text-blue-400 font-bold mb-4 md:mb-6 uppercase tracking-widest text-[10px] md:text-xs opacity-80 text-center lg:text-left">Reagent Dosage</h3>
-                        
-                        <div class="space-y-3 md:space-y-4">
-                            <button class="w-full bg-green-600 hover:bg-green-500 hover:scale-[1.02] active:scale-95 text-white font-bold py-4 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all flex justify-between px-5 md:px-6 items-center group" onclick="addSolute()">
-                                <span class="flex flex-col items-start">
-                                    <span class="text-base md:text-lg">+ Add Solute</span>
-                                    <span class="text-[9px] md:text-[10px] opacity-70 uppercase tracking-tighter">Crystalline Solid</span>
-                                </span>
-                                <span class="bg-black/20 px-3 py-1 rounded-lg text-sm md:text-base">5g</span>
-                            </button>
-
-                            <button class="w-full bg-blue-600 hover:bg-blue-500 hover:scale-[1.02] active:scale-95 text-white font-bold py-4 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all flex justify-between px-5 md:px-6 items-center group" onclick="addWater()">
-                                <span class="flex flex-col items-start">
-                                    <span class="text-base md:text-lg">+ Add Solvent</span>
-                                    <span class="text-[9px] md:text-[10px] opacity-70 uppercase tracking-tighter">Distilled H2O</span>
-                                </span>
-                                <span class="bg-black/20 px-3 py-1 rounded-lg text-sm md:text-base">100mL</span>
-                            </button>
-                        </div>
-
-                        <div class="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/10">
-                            <button class="w-full bg-slate-800 hover:bg-red-900/40 hover:text-red-400 py-3 md:py-4 rounded-xl md:rounded-2xl font-bold transition-all border border-white/5 text-[10px] md:text-xs uppercase tracking-widest" onclick="resetLab()">
-                                Initialize System Reset
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-8 space-y-4 md:space-y-6 order-1 lg:order-2">
-                    <div class="bg-black/40 border border-white/10 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] flex flex-col items-center shadow-2xl relative overflow-hidden min-h-[400px] md:min-h-[500px]">
-                        
-                        <div id="beaker-container" class="relative w-[180px] h-[240px] md:w-[220px] md:h-[300px] mb-6 md:mb-10 border-x-[5px] md:border-x-[6px] border-b-[5px] md:border-b-[6px] border-white/30 rounded-b-[35px] md:rounded-b-[40px] bg-white/5 shadow-[0_15px_40px_rgba(0,0,0,0.5)] overflow-hidden">
-                            <div id="waterFill" class="absolute bottom-0 w-full bg-blue-500/60 transition-all duration-700 ease-out shadow-[inset_0_0_20px_rgba(255,255,255,0.2)]">
-                                <div class="absolute top-0 w-full h-2 md:h-3 bg-white/40 blur-sm"></div>
-                                <div id="soluteParticles" class="absolute inset-0 overflow-hidden"></div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-2 md:gap-6 w-full">
-                            <div class="bg-slate-900/80 p-3 md:p-5 rounded-xl md:rounded-2xl border border-white/10 text-center shadow-xl">
-                                <span class="block text-[8px] md:text-[10px] text-gray-500 uppercase font-bold mb-1">Mass</span>
-                                <span class="text-sm md:text-2xl font-mono text-green-400 font-bold"><span id="solute">0</span>g</span>
-                            </div>
-                            <div class="bg-slate-900/80 p-3 md:p-5 rounded-xl md:rounded-2xl border border-white/10 text-center shadow-xl">
-                                <span class="block text-[8px] md:text-[10px] text-gray-500 uppercase font-bold mb-1">Vol</span>
-                                <span class="text-sm md:text-2xl font-mono text-blue-400 font-bold"><span id="volume">0</span>mL</span>
-                            </div>
-                            <div class="bg-slate-900/80 p-3 md:p-5 rounded-xl md:rounded-2xl border border-blue-500/30 text-center shadow-xl relative overflow-hidden">
-                                <span class="block text-[8px] md:text-[10px] text-blue-400 uppercase font-bold mb-1">Conc.</span>
-                                <span class="text-sm md:text-2xl font-mono text-yellow-400 font-bold" id="formula">0.000</span>
-                            </div>
-                        </div>
-                    </div>
+                <div class="bg-blue-950/20 border border-blue-500/20 p-4 rounded-xl hidden md:block">
+                    <p class="text-[10px] text-blue-400 font-mono leading-relaxed">
+                        <span class="text-blue-200 font-bold">📡 SENSOR_LOG:</span> Monitor saturation levels during titration.
+                    </p>
                 </div>
             </div>
 
-            <div class="feedback-panel mt-2 md:mt-4">
-                <div class="bg-black/60 rounded-[1.5rem] md:rounded-[2rem] border border-blue-500/30 p-5 md:p-8 shadow-2xl relative overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none h-1/3 animate-pulse"></div>
+            <div class="md:col-span-8 flex flex-col items-center gap-6">
+                <div class="bg-white/5 border border-white/10 p-6 md:p-8 rounded-3xl w-full flex flex-col items-center shadow-inner relative overflow-hidden">
                     
-                    <div class="flex items-center gap-3 mb-4 md:mb-6">
+                    <div id="beaker-container" class="relative w-[200px] h-[280px] md:w-[240px] md:h-[320px] mb-8 border-x-[6px] border-b-[6px] border-white/40 rounded-b-[40px] md:rounded-b-[50px] bg-white/5 shadow-2xl overflow-hidden">
+                        <div id="waterFill" class="absolute bottom-0 w-full bg-blue-500/80 transition-all duration-700 ease-out shadow-[inset_0_0_20px_rgba(255,255,255,0.3)]">
+                            <div class="absolute top-0 w-full h-2 bg-white/30 blur-sm"></div>
+                            <div id="soluteParticles" class="absolute inset-0 overflow-hidden"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 md:gap-4 w-full max-w-lg">
+                        <div class="bg-black/40 p-3 md:p-4 rounded-xl border border-white/10 text-center shadow-lg">
+                            <span class="block text-[8px] md:text-xs text-gray-400 uppercase font-bold">Solute</span>
+                            <span class="text-lg md:text-2xl font-mono text-green-400 font-bold"><span id="solute">0</span>g</span>
+                        </div>
+                        <div class="bg-black/40 p-3 md:p-4 rounded-xl border border-white/10 text-center shadow-lg">
+                            <span class="block text-[8px] md:text-xs text-gray-400 uppercase font-bold">Volume</span>
+                            <span class="text-lg md:text-2xl font-mono text-blue-400 font-bold"><span id="volume">0</span>ml</span>
+                        </div>
+                        <div class="bg-black/40 p-3 md:p-4 rounded-xl border border-blue-500/30 text-center shadow-lg">
+                            <span class="block text-[8px] md:text-xs text-blue-400 uppercase font-bold">Conc.</span>
+                            <span class="text-lg md:text-2xl font-mono text-yellow-400 font-bold" id="formula">0.000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full bg-black/60 rounded-3xl border border-blue-500/30 p-6 md:p-8 shadow-2xl relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none h-1/2 animate-pulse"></div>
+                    
+                    <div class="flex items-center gap-3 mb-4">
                         <div class="flex gap-1">
-                            <div class="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-red-500"></div>
-                            <div class="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-yellow-500"></div>
-                            <div class="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-green-500"></div>
+                            <div class="h-2 w-2 rounded-full bg-red-500"></div>
+                            <div class="h-2 w-2 rounded-full bg-yellow-500"></div>
+                            <div class="h-2 w-2 rounded-full bg-green-500"></div>
                         </div>
-                        <div class="text-[9px] md:text-[11px] text-blue-400 font-mono uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold">Analysis Feedback Loop</div>
+                        <div class="text-[10px] md:text-[11px] text-blue-400 font-mono uppercase tracking-[0.3em] font-bold">Analysis Feedback Loop</div>
                     </div>
                     
-                    <div id="concen-feedback" class="text-base md:text-2xl text-white/90 font-medium leading-relaxed italic min-h-[60px] md:min-h-[100px] flex items-center">
-                        Terminal ready. Input reagents for real-time concentration analysis...
+                    <div id="concen-feedback" class="text-lg md:text-2xl text-white/90 font-medium leading-relaxed italic min-h-[80px] md:min-h-[100px] flex items-center justify-start border-l-2 border-blue-500/50 pl-4 md:pl-6">
+                        Terminal initialized. Awaiting reagent input to begin concentration analysis...
                     </div>
                 </div>
             </div>
-
-        </div> </div>
+        </div>
+    </div>
 </div>
-
 
   
 <script>
