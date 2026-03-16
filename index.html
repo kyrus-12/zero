@@ -1079,7 +1079,7 @@ footer.global-nav {
 .act { background: #c0392b; color: white; }
      
 
-.particle {
+#phaseLabModal.particle {
     position: absolute; width: 14px; height: 14px; border-radius: 50%;
     border: 1px solid rgba(0,0,0,0.1); transition: background 0.5s;
 }
@@ -1903,30 +1903,30 @@ footer.global-nav {
     
     
     
-<div id="phaseLabModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[80] p-4 overflow-y-auto">
+<div id="phaseLabModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[80] p-4">
     
-    <div class="bg-gray-900 border border-cyan-500 rounded-3xl p-8 w-full max-w-7xl shadow-2xl relative flex flex-col max-h-[95vh]">
+    <div class="bg-gray-900 border border-cyan-500 rounded-3xl p-8 w-full max-w-7xl shadow-2xl relative flex flex-col max-h-[95vh] overflow-hidden">
         
-        <h2 class="text-2xl font-bold text-cyan-400 mb-6" style="font-family: 'Orbitron';">Molecular Phase Lab</h2>
+        <h2 class="text-2xl font-bold text-cyan-400 mb-6 shrink-0" style="font-family: 'Orbitron';">Molecular Phase Lab</h2>
         
-        <button onclick="closePhaseLab()" class="absolute top-0 right-0 m-4 text-white/50 hover:text-white text-3xl transition-colors">
+        <button onclick="closePhaseLab()" class="absolute top-0 right-0 m-4 text-white/50 hover:text-white text-3xl transition-colors z-10">
             &times;
         </button>
 
-        <div class="main-layout grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div class="main-layout grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch flex-1 overflow-y-auto pr-2">
             
-            <div class="flex flex-col items-center justify-center bg-black/20 p-4 rounded-2xl border border-white/5">
+            <div class="flex flex-col items-center justify-center bg-black/20 p-4 rounded-2xl border border-white/5 shrink-0">
                 <div class="beaker" id="phase-beaker" style="width: 260px; height:380px; border: 6px solid #fff; border-top: none; border-radius: 0 0 30px 30px; position: relative; overflow: hidden; background: rgba(255,255,255,0.03); box-shadow: 0 0 20px rgba(0,0,0,0.5);"></div>
                 <p class="mt-4 text-xs text-white/40 font-mono tracking-widest uppercase">Reaction Chamber</p>
             </div>
              
-            <div class="control-panel flex flex-col gap-3">
-                <div class="status-box bg-white/10 p-4 rounded-2xl text-center border border-white/10">
+            <div class="control-panel flex flex-col gap-3 overflow-y-auto">
+                <div class="status-box bg-white/10 p-4 rounded-2xl text-center border border-white/10 shrink-0">
                     <span class="text-[10px] text-cyan-500 uppercase tracking-widest">Current state</span>
                     <span id="phase-process" class="block mt-1 font-extrabold text-yellow-400 text-lg uppercase">SOLID LATTICE</span>
                 </div>
 
-                <div class="slow-mo-section bg-slate-800 p-3 rounded-xl flex items-center justify-between">
+                <div class="slow-mo-section bg-slate-800 p-3 rounded-xl flex items-center justify-between shrink-0">
                     <span class="text-sm text-white">⏱️ Time</span>
                     <input type="range" id="phaseSpeed" min="0.05" max="1" step="0.05" value="1" class="w-28">
                 </div>
@@ -1943,9 +1943,9 @@ footer.global-nav {
                 <button class="bg-slate-700 w-full py-3 rounded-xl text-white font-bold hover:bg-red-900/40 transition-all mt-2 border border-white/10" onclick="resetPhaseSystem()">Reset System</button>
             </div>
 
-            <div class="feedback-panel h-full">
-                <div class="bg-black/60 rounded-2xl border border-cyan-500/30 p-6 shadow-xl h-full min-h-[300px] flex flex-col">
-                    <div class="flex items-center gap-2 mb-4">
+            <div class="feedback-panel flex flex-col min-h-0">
+                <div class="bg-black/60 rounded-2xl border border-cyan-500/30 p-6 shadow-xl flex flex-col h-full">
+                    <div class="flex items-center gap-2 mb-4 shrink-0">
                         <span class="relative flex h-2 w-2">
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                           <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
@@ -1953,14 +1953,14 @@ footer.global-nav {
                         <div class="text-[10px] text-cyan-500/70 font-mono uppercase tracking-[3px]">Observation Log</div>
                     </div>
                     
-                    <div id="phase-feedback" class="text-lg md:text-xl text-white/90 font-medium leading-relaxed italic scroll-smooth overflow-y-auto">
+                    <div id="phase-feedback" class="text-lg md:text-xl text-white/90 font-medium leading-relaxed italic overflow-y-auto flex-1 pr-2 custom-scrollbar">
                         Ready for analysis. Select a thermal transition to begin molecular observation.
                     </div>
                 </div>
             </div>
 
         </div>
-        </div>
+    </div>
 </div>
   
 <div id="particlesLabModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[80] p-4 overflow-hidden">
