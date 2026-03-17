@@ -3128,41 +3128,8 @@ let dilAttempts = 0;
 let currentCorrectAnswer = 0;
 let currentSolvingFor = "";
 
-const compounds = [
-    { name: "NaCl", mm: 58.44 },
-    { name: "NaOH", mm: 40.00 },
-    { name: "KMnO4", mm: 158.03 },
-    { name: "CuSO4", mm: 159.61 }
-];
 
-const dilGuides = {
-    'compound': "The identity of the solute. This determines the chemical properties and the target of your scan.",
-    'molarMass': "<b>Molar Mass (g/mol):</b> The sum of atomic weights. <br>Formula: <code class='text-purple-400'>MM = mass / moles</code>",
-    'mass': "<b>Mass to Add (g):</b> Used when preparing the initial stock.<br>Formula: <code class='text-purple-400'>mass = M1 × V1(L) × MM</code>",
-    'stockConc': "<b>M1 (Stock Concentration):</b> The strength of the original solution.<br>Formula: <code class='text-purple-400'>M1 = (M2 × V2) / V1</code>",
-    'targetConc': "<b>M2 (Target Concentration):</b> The desired strength after dilution.<br>Formula: <code class='text-purple-400'>M2 = (M1 × V1) / V2</code>",
-    'stockVol': "<b>V1 (Stock Volume):</b> The amount of stock solution to pipet out.<br>Formula: <code class='text-purple-400'>V1 = (M2 × V2) / M1</code>",
-    'targetVol': "<b>V2 (Final Volume):</b> The total volume after solvent is added.<br>Formula: <code class='text-purple-400'>V2 = (M1 × V1) / M2</code>",
-    'answer': "<b>Stoichiometry Check:</b> Calculate the missing variable based on the $M_1V_1 = M_2V_2$ balance or the Mass/Mole relationship."
-};
-
-// AI Personality Scenarios
-const aiScenarios = [
-    "URGENT: Physiological saline levels are low in the emergency wing.",
-    "PROTOCOL: Standard analytical titration requires a precise dilution of",
-    "CONTAMINATION: Detected trace elements in water supply. Prepare a standard of",
-    "RESEARCH: Exploring the oxidative properties of a specialized solution using"
-];
-
-const aiSafety = [
-    "Ensure all glassware is rinsed with deionized water to prevent ionic interference.",
-    "WARNING: High molarity alkaline solutions can cause localized exothermic reactions.",
-    "SAFETY: Check that your nitrile gloves are intact. Avoid inhalation of powdered solute.",
-    "DISPOSAL: Heavy metal ions must be disposed of in the dedicated toxic waste bin."
-];
-
-
-// Global variable to prevent old AI responses from overwriting new ones
+// Global variable for tracking requests
 let lastDilutionRequest = 0;
 
 async function generateDilutionProblem() {
@@ -3183,11 +3150,10 @@ async function generateDilutionProblem() {
     const M2 = ((M1 * V1) / V2).toFixed(3);
     const mass = (M1 * (V1 / 1000) * comp.mm).toFixed(2);
 
-    // Set Input Values UI
+    // Set UI Input Values
     document.getElementById('dil-compound').value = comp.name;
     document.getElementById('dil-molarMass').value = comp.mm;
 
-    // Logic for setting up the "Knowns" vs "Unknowns"
     if(type === 'V1') {
         document.getElementById('dil-stockConc').value = M1;
         document.getElementById('dil-targetConc').value = M2;
@@ -3213,49 +3179,52 @@ async function generateDilutionProblem() {
         currentSolvingFor = "Required Mass";
     }
 
-    // 3. INITIAL UI PLACEHOLDER (Instant)
-    const problemSentence = document.getElementById('dil-problem-sentence');
-    const feedback = document.getElementById("dil-feedback");
-    
-    problemSentence.innerHTML = `<span class="animate-pulse">Accessing Encrypted Mission Brief...</span>`;
-    feedback.classList.remove("hidden");
-    feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> Analyzing ${comp.name} safety protocols...`;
-    feedback.className = "p-4 rounded-xl text-xs bg-cyan-900/30 text-cyan-300 border border-cyan-500/50 mb-4";
+    // 3. GENERATE SCAN DATA DISPLAY
+    let scanData = `// --- INCOMING SCAN DATA ---\n`;
+    scanData += `SOLUTE: ${comp.name}\n`;
+    scanData += `MOLAR_MASS: ${comp.mm} g/mol\n`;
+    scanData += `M1: ${M1} M | V1: ${type === 'V1' ? '?' : V1 + 'mL'}\n`;
+    scanData += `M2: ${type === 'M2' ? '?' : M2 + 'M'} | V2: ${type === 'V2' ? '?' : V2 + 'mL'}\n`;
 
-    // 4. PUTER AI DYNAMIC GENERATION
+    // 4. PUTER AI FETCH (Simplified)
     try {
-        // Define the prompt for the problem and safety
-        const prompt = `Act as a Laboratory Command AI. 
-        1. Create a 1-sentence sci-fi or medical mission scenario involving ${comp.name}.
-        2. Provide one specific safety warning for ${comp.name}.
-        Format: MISSION_TEXT | SAFETY_TEXT`;
+        const prompt = `Act as a Lab Command AI. For the chemical ${comp.name}:
+                        1. Create a 1-sentence sci-fi mission scenario.
+                        2. Give a 2-line safety brief (Hazards and PPE).
+                        Format: MISSION: [text] | SAFETY: [text]`;
 
-        puter.ai.chat(prompt).then(response => {
-            // Check if this request is still valid (user hasn't clicked "New Problem" again)
-            if (lastDilutionRequest !== requestId) return;
+        const response = await puter.ai.chat(prompt);
+        
+        if (lastDilutionRequest === requestId) {
+            const parts = response.message.content.split('|');
+            const aiMission = parts[0] || `MISSION: Prepare stock of ${comp.name}.`;
+            const aiSafety = parts[1] || `SAFETY: Follow standard lab protocols.`;
 
-            const [aiMission, aiSafetyData] = response.message.content.split('|');
-
-            // Map variables for the template
+            // Prepare the math prompt part
             const varMap = {
-                'V1': `Determine the <b>volume of stock (V1)</b> required to yield ${V2}mL at ${M2}M from a ${M1}M source.`,
-                'M2': `If exactly ${V1}mL of ${M1}M solution is diluted to a total of ${V2}mL, find the <b>new Molarity (M2)</b>.`,
-                'V2': `To what <b>final volume (V2)</b> must you dilute ${V1}mL of ${M1}M to reach ${M2}M?`,
-                'mass': `How many <b>grams</b> are needed to prepare the initial ${V1}mL of ${M1}M stock solution?`
+                'V1': `Calculate the <b>stock volume (V1)</b> needed for this protocol.`,
+                'M2': `Find the <b>final concentration (M2)</b> after dilution.`,
+                'V2': `Determine the <b>total volume (V2)</b> required.`,
+                'mass': `Solve for the <b>mass (grams)</b> needed for the initial stock.`
             };
 
-            // Update UI with AI content
-            problemSentence.innerHTML = `${aiMission.trim()} <b>${comp.name}</b>. ${varMap[type]}`;
-            feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> ${aiSafetyData.trim()}`;
-        });
+            // Update the Display Sentence
+            document.getElementById('dil-problem-sentence').innerHTML = `${aiMission} <b>${comp.name}</b>. ${varMap[type]}`;
+
+            // Update the Digital Scratchpad
+            const scratchpad = document.getElementById('sol-scratchpad'); 
+            if(scratchpad) {
+                scratchpad.value = `${aiMission}\n\n// --- AI SAFETY PROTOCOL ---\n${aiSafety.trim()}\n\n${scanData}\n${'-'.repeat(30)}`;
+            }
+        }
     } catch (err) {
-        problemSentence.innerHTML = `Manual Override: Calculate ${currentSolvingFor} for ${comp.name}.`;
-        feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> Standard safety protocols apply.`;
+        document.getElementById('dil-problem-sentence').innerHTML = `Manual Override: Solve for ${currentSolvingFor} using ${comp.name}.`;
     }
 
     updateDilGuide('compound');
 }
-
+    
+    
 // Logic for Checking Answers (Precise Math)
 function checkDilutionAnswer() {
     const studentValue = document.getElementById("dil-studentAnswer").value;
