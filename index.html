@@ -3326,10 +3326,14 @@ function showDefinition(type) {
 }
 
 
-  // Global variable to keep track of the current mission index
+// Global variables
 let currentOpeningIndex = 0; 
+let lastRequestTimestamp = 0; // Tracks the newest request
 
 async function renderStoryAndData() {
+    const now = Date.now();
+    lastRequestTimestamp = now; // Mark this as the "current" valid request
+
     // 1. COLLECT DATA
     const comp = document.getElementById('sol-compound').value || "---";
     const mm = document.getElementById('sol-molarMass').value || "---";
@@ -3341,7 +3345,7 @@ async function renderStoryAndData() {
     const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
     const target = emptyFields.length === 1 ? emptyFields[0] : null;
 
-    // 2. GENERATE STORY & DATA SCAN (Synchronous - Instant)
+    // 2. GENERATE STORY & DATA SCAN
     const library = [
         { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
         { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
@@ -3364,34 +3368,36 @@ async function renderStoryAndData() {
     if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
     if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
 
-    // 3. INITIAL RENDER (Instant Update)
+    // 3. INITIAL RENDER
     const scratchpad = document.getElementById('sol-scratchpad');
-    let safetyPlaceholder = `// [AI SAFETY SCAN]: Analyzing ${comp}...`;
-    
     const buildHeader = (safety) => `${storyText}\n\n${safety}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
     
-    // Show the "Analyzing..." version immediately
-    scratchpad.value = buildHeader(safetyPlaceholder);
+    // Show local data instantly
+    let initialSafety = comp !== "---" ? `// [AI SAFETY SCAN]: Analyzing ${comp}...` : `// [AI SAFETY SCAN]: Waiting for compound...`;
+    scratchpad.value = buildHeader(initialSafety);
 
-    // 4. BACKGROUND AI FETCH (Doesn't block the rest of the script)
-    if (comp !== "---" && comp.length > 1) {
-        // We don't use 'await' here so the function continues to the math updates
-        puter.ai.chat(`Identify ${comp}. 1.Hazards. 2.PPE. 3.Disposal. Max 30 words.`)
+    // 4. BACKGROUND AI FETCH WITH TIMESTAMP CHECK
+    if (comp !== "---" && comp.length > 2) { // Only scan if compound name is 3+ chars
+        puter.ai.chat(`Identify ${comp}: 1.Hazards, 2.PPE, 3.Disposal. Concise.`)
             .then(response => {
-                const safetyContent = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
-                // Update the scratchpad again with the real data once it arrives
-                scratchpad.value = buildHeader(safetyContent);
+                // IMPORTANT: Only update if this is still the newest request
+                if (lastRequestTimestamp === now) {
+                    const safetyContent = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
+                    scratchpad.value = buildHeader(safetyContent);
+                }
             })
             .catch(() => {
-                scratchpad.value = buildHeader(`// [AI SAFETY SCAN]: Safety data unavailable.`);
+                if (lastRequestTimestamp === now) {
+                    scratchpad.value = buildHeader(`// [AI SAFETY SCAN]: Service temporarily unavailable.`);
+                }
             });
     }
 
-    // 5. UPDATE MATH VISUALS (Instant)
+    // 5. UPDATE MATH VISUALS
     if (typeof updateFractionDisplay === "function") {
         updateFractionDisplay(target, mm, m, v, g);
     }
-}
+    }
     
 
 // --- DIMENSIONAL ANALYSIS DISPLAY (The "Realistic" Part) ---
