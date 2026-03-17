@@ -3161,41 +3161,1011 @@ const aiSafety = [
     "DISPOSAL: Heavy metal ions must be disposed of in the dedicated toxic waste bin."
 ];
 
+
+    
+Conversation with Gemini
+You said
+Can you help me here to integrate puter AI for feebacking step by step laboratory safety? It should also appear on the digital scratch paper. Like for instance, analyze the problem what is the chemical, how to handle and dispose it properly? Thanksss.. function renderStoryAndData() {
+
+    const comp = document.getElementById('sol-compound').value || "---";
+
+    const mm = document.getElementById('sol-molarMass').value || "---";
+
+    const m = document.getElementById('sol-molarity').value || "---";
+
+    const v = document.getElementById('sol-volume').value || "---";
+
+    const g = document.getElementById('sol-grams').value || "---";
+
+    
+
+    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
+
+    const target = emptyFields.length === 1 ? emptyFields[0] : null;
+
+
+
+    // 1. DATA SCAN BLOCK
+
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M (mol/L)\n`;
+
+    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
+
+    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+
+
+    // 2. ROBUST MISSION LIBRARY
+
+    const library = [
+
+        // Searching for Grams
+
+        { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+
+        { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
+
+        { text: `Synthesis Protocol: Weigh out ${comp} for a ${v}L, ${m}M batch.`, hides: 'sol-grams' },
+
+        // Searching for Molarity
+
+        { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
+
+        { text: `Quality Control: Determine the concentration of ${g}g ${comp} in ${v}L.`, hides: 'sol-molarity' },
+
+        // Searching for Volume
+
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' },
+
+        { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
+
+    ];
+
+
+
+    let filtered = library.filter(s => s.hides === target);
+
+    let storyText = filtered.length > 0 
+
+        ? filtered[currentOpeningIndex % filtered.length].text 
+
+        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+
+
+
+    // 3. UPDATE VISUALS
+
+    const scratchpad = document.getElementById('sol-scratchpad');
+
+    const headerString = `${storyText}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+
+    
+
+    if(!scratchpad.value || scratchpad.value.includes("// ---")) {
+
+        scratchpad.placeholder = headerString + "Enter dimensional analysis steps here...";
+
+    }
+
+    
+
+    updateFractionDisplay(target, mm, m, v, g);
+
+} Make sure no missing codessss
+
+Gemini said
+Integrating AI feedback into your "digital scratchpad" is a great way to turn a standard calculator into a real-time safety mentor. Since you are using Puter.js, we can leverage its AI models to analyze the chemical name entered and generate a safety protocol.
+
+Here is the updated logic to fetch safety data and append it directly to your scratchpad.
+
+1. The Strategy
+We will create an async function that:
+
+Identifies the chemical name (comp).
+
+Calls Puter AI to get three specific data points: Hazards, Handling, and Disposal.
+
+Injects this "Safety Briefing" into the headerString before it renders to the scratchpad.
+
+2. Updated Code Implementation
+Replace your current function (or update the sections) with this logic:
+
+JavaScript
+// Ensure you have puter.js initialized in your HTML <head>
+// <script src="https://js.puter.com/v2/"></script>
+
+async function renderStoryAndData() {
+    const comp = document.getElementById('sol-compound').value || "---";
+    const mm = document.getElementById('sol-molarMass').value || "---";
+    const m = document.getElementById('sol-molarity').value || "---";
+    const v = document.getElementById('sol-volume').value || "---";
+    const g = document.getElementById('sol-grams').value || "---";
+    
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams']; // Assumed variable name
+    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
+    const target = emptyFields.length === 1 ? emptyFields[0] : null;
+
+    // --- NEW: AI SAFETY SCAN BLOCK ---
+    let safetyBriefing = `// [AI SAFETY SCAN]: Waiting for compound name...`;
+    
+    if (comp !== "---" && comp.length > 1) {
+        try {
+            // Using Puter AI to fetch rapid safety feedback
+            const prompt = `Provide a 3-line lab safety brief for ${comp}: 
+                            Line 1: Main hazards (GHS). 
+                            Line 2: Handling (PPE). 
+                            Line 3: Proper disposal method. 
+                            Keep it concise for a small digital scratchpad.`;
+            
+            const response = await puter.ai.chat(prompt);
+            safetyBriefing = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
+        } catch (error) {
+            safetyBriefing = `// [AI SAFETY SCAN]: Offline or compound not recognized.`;
+        }
+    }
+
+    // 1. DATA SCAN BLOCK (Same as yours)
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
+    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
+    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+    // 2. ROBUST MISSION LIBRARY (Same as yours)
+    const library = [
+        { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+        { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
+        { text: `Synthesis Protocol: Weigh out ${comp} for a ${v}L, ${m}M batch.`, hides: 'sol-grams' },
+        { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
+        { text: `Quality Control: Determine the concentration of ${g}g ${comp} in ${v}L.`, hides: 'sol-molarity' },
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' },
+        { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
+    ];
+
+    let currentOpeningIndex = 0; // Ensure this is defined globally or passed in
+    let filtered = library.filter(s => s.hides === target);
+    let storyText = filtered.length > 0 
+        ? filtered[currentOpeningIndex % filtered.length].text 
+        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+
+    // 3. UPDATE VISUALS
+    const scratchpad = document.getElementById('sol-scratchpad');
+    
+    // Combine Story + Safety + Data
+    const headerString = `${storyText}\n\n${safetyBriefing}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+    
+    if(!scratchpad.value || scratchpad.value.includes("// ---")) {
+        scratchpad.value = headerString; // Directly setting value so AI info stays visible
+    }
+    
+    // Ensure this function exists in your main script
+    if (typeof updateFractionDisplay === "function") {
+        updateFractionDisplay(target, mm, m, v, g);
+    }
+}
+3. Key Improvements Made:
+Safety Integration: I added an await puter.ai.chat() call. This specifically asks the AI to keep the feedback to 3 lines so it doesn't clutter the scratchpad.
+
+Dynamic Parsing: It only triggers the AI if a compound name is entered, saving you API tokens/calls.
+
+Direct Value Injection: Instead of just a placeholder, I changed it to scratchpad.value = headerString. This ensures the safety info is "written" on the paper immediately for the student to see.
+
+Error Handling: If Puter AI can't find the chemical (e.g., if a user types "BlahBlahGas"), it simply returns an "Offline/Not recognized" message instead of breaking the whole script.
+
+4. How it will look on your Scratchpad:
+Reactor breach! Inject 1L of HCl at 1.0M to neutralize.
+
+// --- AI SAFETY PROTOCOL: HCL ---
+Hazards: Highly corrosive, causes severe skin burns.
+Handling: Wear acid-resistant gloves and splash goggles; use in fume hood.
+Disposal: Neutralize with sodium bicarbonate before flushing with excess water.
+
+// --- INCOMING SCAN DATA ---
+SUBSTANCE: HCl
+...
+
+Would you like me to add a feature that also suggests which specific PPE icons (like goggles or gloves) should light up based on the AI's response?
+
+You said
+Based from this code the puter AI is too slow to response but even though we can make it's response immediately. Make sure the scanned given are the same, correct, precise and accurate. Thanksss. No missing codes. // Ensure you have puter.js initialized in your HTML <head>
+
+// <script src="https://js.puter.com/v2/"></script>
+
+
+
+async function renderStoryAndData() {
+
+    const comp = document.getElementById('sol-compound').value || "---";
+
+    const mm = document.getElementById('sol-molarMass').value || "---";
+
+    const m = document.getElementById('sol-molarity').value || "---";
+
+    const v = document.getElementById('sol-volume').value || "---";
+
+    const g = document.getElementById('sol-grams').value || "---";
+
+    
+
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams']; // Assumed variable name
+
+    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
+
+    const target = emptyFields.length === 1 ? emptyFields[0] : null;
+
+
+
+    // --- NEW: AI SAFETY SCAN BLOCK ---
+
+    let safetyBriefing = `// [AI SAFETY SCAN]: Waiting for compound name...`;
+
+    
+
+    if (comp !== "---" && comp.length > 1) {
+
+        try {
+
+            // Using Puter AI to fetch rapid safety feedback
+
+            const prompt = `Provide a 3-line lab safety brief for ${comp}: 
+
+                            Line 1: Main hazards (GHS). 
+
+                            Line 2: Handling (PPE). 
+
+                            Line 3: Proper disposal method. 
+
+                            Keep it concise for a small digital scratchpad.`;
+
+            
+
+            const response = await puter.ai.chat(prompt);
+
+            safetyBriefing = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
+
+        } catch (error) {
+
+            safetyBriefing = `// [AI SAFETY SCAN]: Offline or compound not recognized.`;
+
+        }
+
+    }
+
+
+
+    // 1. DATA SCAN BLOCK (Same as yours)
+
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
+
+    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
+
+    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+
+
+    // 2. ROBUST MISSION LIBRARY (Same as yours)
+
+    const library = [
+
+        { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+
+        { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
+
+        { text: `Synthesis Protocol: Weigh out ${comp} for a ${v}L, ${m}M batch.`, hides: 'sol-grams' },
+
+        { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
+
+        { text: `Quality Control: Determine the concentration of ${g}g ${comp} in ${v}L.`, hides: 'sol-molarity' },
+
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' },
+
+        { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
+
+    ];
+
+
+
+    let currentOpeningIndex = 0; // Ensure this is defined globally or passed in
+
+    let filtered = library.filter(s => s.hides === target);
+
+    let storyText = filtered.length > 0 
+
+        ? filtered[currentOpeningIndex % filtered.length].text 
+
+        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+
+
+
+    // 3. UPDATE VISUALS
+
+    const scratchpad = document.getElementById('sol-scratchpad');
+
+    
+
+    // Combine Story + Safety + Data
+
+    const headerString = `${storyText}\n\n${safetyBriefing}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+
+    
+
+    if(!scratchpad.value || scratchpad.value.includes("// ---")) {
+
+        scratchpad.value = headerString; // Directly setting value so AI info stays visible
+
+    }
+
+    
+
+    // Ensure this function exists in your main script
+
+    if (typeof updateFractionDisplay === "function") {
+
+        updateFractionDisplay(target, mm, m, v, g);
+
+    }
+
+}
+
+Gemini said
+To make the AI response feel "immediate" while maintaining accuracy, we need to change how the function executes. Currently, using await inside the main function pauses everything—meaning the math data and story won't appear until the AI finishes "thinking."
+
+The Strategy: "Optimistic UI"
+We will update the scratchpad twice:
+
+First update (Instant): Shows the story and the scanned data immediately.
+
+Second update (Background): Once the AI finishes, it "injects" the safety briefing into the already visible text.
+
+Here is the complete, optimized code:
+
+JavaScript
+// Global variable to keep track of the current mission index
+let currentOpeningIndex = 0; 
+
+async function renderStoryAndData() {
+    // 1. COLLECT DATA
+    const comp = document.getElementById('sol-compound').value || "---";
+    const mm = document.getElementById('sol-molarMass').value || "---";
+    const m = document.getElementById('sol-molarity').value || "---";
+    const v = document.getElementById('sol-volume').value || "---";
+    const g = document.getElementById('sol-grams').value || "---";
+    
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
+    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
+    const target = emptyFields.length === 1 ? emptyFields[0] : null;
+
+    // 2. GENERATE STORY & DATA SCAN (Synchronous - Instant)
+    const library = [
+        { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+        { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
+        { text: `Synthesis Protocol: Weigh out ${comp} for a ${v}L, ${m}M batch.`, hides: 'sol-grams' },
+        { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
+        { text: `Quality Control: Determine the concentration of ${g}g ${comp} in ${v}L.`, hides: 'sol-molarity' },
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' },
+        { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
+    ];
+
+    let filtered = library.filter(s => s.hides === target);
+    let storyText = filtered.length > 0 
+        ? filtered[currentOpeningIndex % filtered.length].text 
+        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
+    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
+    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+    // 3. INITIAL RENDER (Instant Update)
+    const scratchpad = document.getElementById('sol-scratchpad');
+    let safetyPlaceholder = `// [AI SAFETY SCAN]: Analyzing ${comp}...`;
+    
+    const buildHeader = (safety) => `${storyText}\n\n${safety}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+    
+    // Show the "Analyzing..." version immediately
+    scratchpad.value = buildHeader(safetyPlaceholder);
+
+    // 4. BACKGROUND AI FETCH (Doesn't block the rest of the script)
+    if (comp !== "---" && comp.length > 1) {
+        // We don't use 'await' here so the function continues to the math updates
+        puter.ai.chat(`Identify ${comp}. 1.Hazards. 2.PPE. 3.Disposal. Max 30 words.`)
+            .then(response => {
+                const safetyContent = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
+                // Update the scratchpad again with the real data once it arrives
+                scratchpad.value = buildHeader(safetyContent);
+            })
+            .catch(() => {
+                scratchpad.value = buildHeader(`// [AI SAFETY SCAN]: Safety data unavailable.`);
+            });
+    }
+
+    // 5. UPDATE MATH VISUALS (Instant)
+    if (typeof updateFractionDisplay === "function") {
+        updateFractionDisplay(target, mm, m, v, g);
+    }
+}
+Why this is better:
+Zero Lag: By removing await from the main flow of the function, the "Scanned Data" and the "Story" appear the millisecond the user types.
+
+Visual Feedback: The user sees // Analyzing [Chemical]... so they know the AI is working without the app feeling "frozen."
+
+Accuracy: The data display (givenDisplay) is rendered first using the exact values from your inputs, ensuring the precision you asked for.
+
+Reliability: Even if Puter AI is slow or fails, your calculator still works and the math display still updates.
+
+Would you like me to help you create a "Safety Warning" sound effect or a flashing red border that triggers when the AI detects a hazardous chemical?
+
+You said
+Why it ruins the whole code? Thanksss. // Global variable to keep track of the current mission index
+
+let currentOpeningIndex = 0; 
+
+
+
+async function renderStoryAndData() {
+
+    // 1. COLLECT DATA
+
+    const comp = document.getElementById('sol-compound').value || "---";
+
+    const mm = document.getElementById('sol-molarMass').value || "---";
+
+    const m = document.getElementById('sol-molarity').value || "---";
+
+    const v = document.getElementById('sol-volume').value || "---";
+
+    const g = document.getElementById('sol-grams').value || "---";
+
+    
+
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
+
+    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
+
+    const target = emptyFields.length === 1 ? emptyFields[0] : null;
+
+
+
+    // 2. GENERATE STORY & DATA SCAN (Synchronous - Instant)
+
+    const library = [
+
+        { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+
+        { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
+
+        { text: `Synthesis Protocol: Weigh out ${comp} for a ${v}L, ${m}M batch.`, hides: 'sol-grams' },
+
+        { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
+
+        { text: `Quality Control: Determine the concentration of ${g}g ${comp} in ${v}L.`, hides: 'sol-molarity' },
+
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' },
+
+        { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
+
+    ];
+
+
+
+    let filtered = library.filter(s => s.hides === target);
+
+    let storyText = filtered.length > 0 
+
+        ? filtered[currentOpeningIndex % filtered.length].text 
+
+        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+
+
+
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
+
+    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
+
+    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+
+
+    // 3. INITIAL RENDER (Instant Update)
+
+    const scratchpad = document.getElementById('sol-scratchpad');
+
+    let safetyPlaceholder = `// [AI SAFETY SCAN]: Analyzing ${comp}...`;
+
+    
+
+    const buildHeader = (safety) => `${storyText}\n\n${safety}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+
+    
+
+    // Show the "Analyzing..." version immediately
+
+    scratchpad.value = buildHeader(safetyPlaceholder);
+
+
+
+    // 4. BACKGROUND AI FETCH (Doesn't block the rest of the script)
+
+    if (comp !== "---" && comp.length > 1) {
+
+        // We don't use 'await' here so the function continues to the math updates
+
+        puter.ai.chat(`Identify ${comp}. 1.Hazards. 2.PPE. 3.Disposal. Max 30 words.`)
+
+            .then(response => {
+
+                const safetyContent = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
+
+                // Update the scratchpad again with the real data once it arrives
+
+                scratchpad.value = buildHeader(safetyContent);
+
+            })
+
+            .catch(() => {
+
+                scratchpad.value = buildHeader(`// [AI SAFETY SCAN]: Safety data unavailable.`);
+
+            });
+
+    }
+
+
+
+    // 5. UPDATE MATH VISUALS (Instant)
+
+    if (typeof updateFractionDisplay === "function") {
+
+        updateFractionDisplay(target, mm, m, v, g);
+
+    }
+
+} No missing codess
+
+Gemini said
+It likely "ruins" the code because of a race condition. Every time you type a single letter, renderStoryAndData() fires. If you type "NaCl", you are triggering the AI 4 times. Since the AI takes a second to respond, the "N" response might arrive after the "NaCl" response, overwriting your scratchpad with old, incorrect data.
+
+To fix this, we need to Abort previous requests so only the latest one matters.
+
+The Fix: Request Tracking
+We add a simple lastRequestTimestamp to ensure that only the most recent AI response is allowed to touch your scratchpad.
+
+JavaScript
+// Global variables
+let currentOpeningIndex = 0; 
+let lastRequestTimestamp = 0; // Tracks the newest request
+
+async function renderStoryAndData() {
+    const now = Date.now();
+    lastRequestTimestamp = now; // Mark this as the "current" valid request
+
+    // 1. COLLECT DATA
+    const comp = document.getElementById('sol-compound').value || "---";
+    const mm = document.getElementById('sol-molarMass').value || "---";
+    const m = document.getElementById('sol-molarity').value || "---";
+    const v = document.getElementById('sol-volume').value || "---";
+    const g = document.getElementById('sol-grams').value || "---";
+    
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
+    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
+    const target = emptyFields.length === 1 ? emptyFields[0] : null;
+
+    // 2. GENERATE STORY & DATA SCAN
+    const library = [
+        { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+        { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
+        { text: `Synthesis Protocol: Weigh out ${comp} for a ${v}L, ${m}M batch.`, hides: 'sol-grams' },
+        { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
+        { text: `Quality Control: Determine the concentration of ${g}g ${comp} in ${v}L.`, hides: 'sol-molarity' },
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' },
+        { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
+    ];
+
+    let filtered = library.filter(s => s.hides === target);
+    let storyText = filtered.length > 0 
+        ? filtered[currentOpeningIndex % filtered.length].text 
+        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
+    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
+    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+    // 3. INITIAL RENDER
+    const scratchpad = document.getElementById('sol-scratchpad');
+    const buildHeader = (safety) => `${storyText}\n\n${safety}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+    
+    // Show local data instantly
+    let initialSafety = comp !== "---" ? `// [AI SAFETY SCAN]: Analyzing ${comp}...` : `// [AI SAFETY SCAN]: Waiting for compound...`;
+    scratchpad.value = buildHeader(initialSafety);
+
+    // 4. BACKGROUND AI FETCH WITH TIMESTAMP CHECK
+    if (comp !== "---" && comp.length > 2) { // Only scan if compound name is 3+ chars
+        puter.ai.chat(`Identify ${comp}: 1.Hazards, 2.PPE, 3.Disposal. Concise.`)
+            .then(response => {
+                // IMPORTANT: Only update if this is still the newest request
+                if (lastRequestTimestamp === now) {
+                    const safetyContent = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
+                    scratchpad.value = buildHeader(safetyContent);
+                }
+            })
+            .catch(() => {
+                if (lastRequestTimestamp === now) {
+                    scratchpad.value = buildHeader(`// [AI SAFETY SCAN]: Service temporarily unavailable.`);
+                }
+            });
+    }
+
+    // 5. UPDATE MATH VISUALS
+    if (typeof updateFractionDisplay === "function") {
+        updateFractionDisplay(target, mm, m, v, g);
+    }
+}
+Why this version won't "Ruin" things:
+Request Locking: The if (lastRequestTimestamp === now) check acts like a gatekeeper. If you type "NaCl" quickly, 4 requests are sent, but only the final one is allowed to update the screen. This stops the text from jumping back and forth.
+
+Minimum Character Limit: I set comp.length > 2. This prevents the AI from trying to look up "N" or "Na" while you're still typing, which saves speed and prevents errors.
+
+Local First: The givenDisplay (your math data) is calculated locally and instantly. It does not wait for the AI.
+
+Would you like me to add a "Debounce" timer so the AI only starts searching after you stop typing for 500ms?
+
+You said
+Can we also integrate here the puter AI for generating problems that are not scripted also for generating lab safety on digital scratch paper? Thanksss. let dilAttempts = 0;
+
+let currentCorrectAnswer = 0;
+
+let currentSolvingFor = "";
+
+
+
+const compounds = [
+
+{ name: "NaCl", mm: 58.44 },
+
+{ name: "NaOH", mm: 40.00 },
+
+{ name: "KMnO4", mm: 158.03 },
+
+{ name: "CuSO4", mm: 159.61 }
+
+];
+
+
+
+const dilGuides = {
+
+'compound': "The identity of the solute. This determines the chemical properties and the target of your scan.",
+
+'molarMass': "<b>Molar Mass (g/mol):</b> The sum of atomic weights. <br>Formula: <code class='text-purple-400'>MM = mass / moles</code>",
+
+'mass': "<b>Mass to Add (g):</b> Used when preparing the initial stock.<br>Formula: <code class='text-purple-400'>mass = M1 × V1(L) × MM</code>",
+
+'stockConc': "<b>M1 (Stock Concentration):</b> The strength of the original solution.<br>Formula: <code class='text-purple-400'>M1 = (M2 × V2) / V1</code>",
+
+'targetConc': "<b>M2 (Target Concentration):</b> The desired strength after dilution.<br>Formula: <code class='text-purple-400'>M2 = (M1 × V1) / V2</code>",
+
+'stockVol': "<b>V1 (Stock Volume):</b> The amount of stock solution to pipet out.<br>Formula: <code class='text-purple-400'>V1 = (M2 × V2) / M1</code>",
+
+'targetVol': "<b>V2 (Final Volume):</b> The total volume after solvent is added.<br>Formula: <code class='text-purple-400'>V2 = (M1 × V1) / M2</code>",
+
+'answer': "<b>Stoichiometry Check:</b> Calculate the missing variable based on the $M_1V_1 = M_2V_2$ balance or the Mass/Mole relationship."
+
+};
+
+
+
+// AI Personality Scenarios
+
+const aiScenarios = [
+
+"URGENT: Physiological saline levels are low in the emergency wing.",
+
+"PROTOCOL: Standard analytical titration requires a precise dilution of",
+
+"CONTAMINATION: Detected trace elements in water supply. Prepare a standard of",
+
+"RESEARCH: Exploring the oxidative properties of a specialized solution using"
+
+];
+
+
+
+const aiSafety = [
+
+"Ensure all glassware is rinsed with deionized water to prevent ionic interference.",
+
+"WARNING: High molarity alkaline solutions can cause localized exothermic reactions.",
+
+"SAFETY: Check that your nitrile gloves are intact. Avoid inhalation of powdered solute.",
+
+"DISPOSAL: Heavy metal ions must be disposed of in the dedicated toxic waste bin."
+
+];
+
+
+
 function generateDilutionProblem() {
+
+resetDilutionLab();
+
+const comp = compounds[Math.floor(Math.random() * compounds.length)];
+
+const types = ['V1', 'M2', 'V2', 'mass'];
+
+const type = types[Math.floor(Math.random() * types.length)];
+
+
+// Pick dynamic scenario and safety advisory
+
+const scenario = aiScenarios[Math.floor(Math.random() * aiScenarios.length)];
+
+const safety = aiSafety[Math.floor(Math.random() * aiSafety.length)];
+
+
+
+// Values Generation
+
+const M1 = (Math.random() * 4 + 1).toFixed(2);
+
+const V1 = (Math.random() * 50 + 5).toFixed(1);
+
+const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
+
+const M2 = ((M1 * V1) / V2).toFixed(3);
+
+const mass = (M1 * (V1 / 1000) * comp.mm).toFixed(2);
+
+
+
+// Problem Facilitation Templates
+
+const templates = {
+
+'V1': `${scenario} <b>${comp.name}</b>. Determine the <b>volume of stock (V1)</b> required to yield ${V2}mL at ${M2}M from a ${M1}M source.`,
+
+'M2': `${scenario} <b>${comp.name}</b>. If exactly ${V1}mL of ${M1}M solution is diluted to a total of ${V2}mL, find the <b>new Molarity (M2)</b>.`,
+
+'V2': `${scenario} <b>${comp.name}</b>. To what <b>final volume (V2)</b> must you dilute ${V1}mL of ${M1}M to reach ${M2}M?`,
+
+'mass': `${scenario} <b>${comp.name}</b>. How many <b>grams</b> are needed to prepare the initial ${V1}mL of ${M1}M stock solution?`
+
+};
+
+
+
+// UI Updates
+
+document.getElementById('dil-compound').value = comp.name;
+
+document.getElementById('dil-molarMass').value = comp.mm;
+
+
+// Safety Feedback (Immediate scan results)
+
+const feedback = document.getElementById("dil-feedback");
+
+feedback.classList.remove("hidden");
+
+feedback.className = "p-4 rounded-xl text-xs bg-cyan-900/30 text-cyan-300 border border-cyan-500/50 mb-4";
+
+feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> ${safety}`;
+
+
+
+if(type === 'V1') {
+
+document.getElementById('dil-stockConc').value = M1;
+
+document.getElementById('dil-targetConc').value = M2;
+
+document.getElementById('dil-targetVol').value = V2;
+
+currentCorrectAnswer = parseFloat(V1);
+
+currentSolvingFor = "Stock Volume (V1)";
+
+} else if(type === 'M2') {
+
+document.getElementById('dil-stockConc').value = M1;
+
+document.getElementById('dil-stockVol').value = V1;
+
+document.getElementById('dil-targetVol').value = V2;
+
+currentCorrectAnswer = parseFloat(M2);
+
+currentSolvingFor = "Target Concentration (M2)";
+
+} else if(type === 'V2') {
+
+document.getElementById('dil-stockConc').value = M1;
+
+document.getElementById('dil-stockVol').value = V1;
+
+document.getElementById('dil-targetConc').value = M2;
+
+currentCorrectAnswer = parseFloat(V2);
+
+currentSolvingFor = "Final Volume (V2)";
+
+} else {
+
+document.getElementById('dil-stockConc').value = M1;
+
+document.getElementById('dil-stockVol').value = V1;
+
+currentCorrectAnswer = parseFloat(mass);
+
+currentSolvingFor = "Required Mass";
+
+}
+
+
+
+document.getElementById('dil-problem-sentence').innerHTML = templates[type];
+
+updateDilGuide('compound');
+
+}
+
+
+
+function checkDilutionAnswer() {
+
+const studentValue = document.getElementById("dil-studentAnswer").value;
+
+const student = parseFloat(studentValue);
+
+const feedback = document.getElementById("dil-feedback");
+
+
+if(isNaN(student)) return alert("CRITICAL: Input detected as Non-Numerical. Terminal requires a valid value.");
+
+
+
+dilAttempts++;
+
+feedback.classList.remove("hidden");
+
+const isCorrect = Math.abs(student - currentCorrectAnswer) < (currentCorrectAnswer * 0.02);
+
+
+
+if(isCorrect) {
+
+feedback.className = "p-4 rounded-xl text-sm flex bg-green-500/20 text-green-400 border border-green-500";
+
+feedback.innerHTML = `⚡ <b>VERIFIED:</b> Calculation precision within limits. ${currentSolvingFor} is confirmed as ${currentCorrectAnswer}.`;
+
+document.getElementById("dil-verifyBtn").disabled = true;
+
+} else {
+
+if(dilAttempts < 3) {
+
+feedback.className = "p-4 rounded-xl text-sm flex bg-yellow-500/20 text-yellow-400 border border-yellow-500";
+
+feedback.innerHTML = `⚠️ <b>MISMATCH:</b> Analytical discrepancy found (${dilAttempts}/3). Recalculate using $M_1V_1 = M_2V_2$.`;
+
+} else {
+
+feedback.className = "p-4 rounded-xl text-sm flex bg-red-500/20 text-red-400 border border-red-500";
+
+feedback.innerHTML = `❌ <b>FAILURE:</b> Protocol rejected. Correct value: ${currentCorrectAnswer}. Resetting terminal.`;
+
+document.getElementById("dil-verifyBtn").disabled = true;
+
+}
+
+}
+
+}
+
+
+
+function updateDilGuide(field) {
+
+const guideText = document.getElementById('guide-text');
+
+if (guideText && dilGuides[field]) guideText.innerHTML = dilGuides[field];
+
+}
+
+
+
+function resetDilutionLab() {
+
+dilAttempts = 0;
+
+const ids = ['dil-compound', 'dil-molarMass', 'dil-mass', 'dil-stockConc', 'dil-targetConc', 'dil-targetVol', 'dil-stockVol', 'dil-studentAnswer'];
+
+ids.forEach(id => {
+
+const el = document.getElementById(id);
+
+if(el) el.value = "";
+
+});
+
+document.getElementById("dil-feedback").classList.add("hidden");
+
+document.getElementById("dil-verifyBtn").disabled = false;
+
+}
+
+
+
+function closeDilutionLab() {
+
+const modal = document.getElementById('dilutionLabModal');
+
+if(modal) {
+
+modal.classList.add('hidden');
+
+modal.classList.remove('flex');
+
+}
+
+} no missing codes againnn
+
+Gemini said
+To make your lab "truly AI-powered," we will replace the static aiScenarios and aiSafety arrays with a direct call to Puter AI. This allows the terminal to generate an infinite variety of scenarios (from space missions to medical emergencies) and real safety data for any chemical.
+
+To keep it fast, we use the "Background Fetch" pattern so the math values appear instantly while the AI "types" the story and safety.
+
+The Integrated AI Code
+JavaScript
+// Global variable to prevent old AI responses from overwriting new ones
+let lastDilutionRequest = 0;
+
+async function generateDilutionProblem() {
+    const requestId = Date.now();
+    lastDilutionRequest = requestId;
+
     resetDilutionLab();
+
+    // 1. SELECT CHEMICAL & TARGET
     const comp = compounds[Math.floor(Math.random() * compounds.length)];
     const types = ['V1', 'M2', 'V2', 'mass'];
     const type = types[Math.floor(Math.random() * types.length)];
-    
-    // Pick dynamic scenario and safety advisory
-    const scenario = aiScenarios[Math.floor(Math.random() * aiScenarios.length)];
-    const safety = aiSafety[Math.floor(Math.random() * aiSafety.length)];
 
-    // Values Generation
+    // 2. GENERATE PRECISE MATH VALUES
     const M1 = (Math.random() * 4 + 1).toFixed(2);
     const V1 = (Math.random() * 50 + 5).toFixed(1);
     const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
     const M2 = ((M1 * V1) / V2).toFixed(3);
     const mass = (M1 * (V1 / 1000) * comp.mm).toFixed(2);
 
-    // Problem Facilitation Templates
-    const templates = {
-        'V1': `${scenario} <b>${comp.name}</b>. Determine the <b>volume of stock (V1)</b> required to yield ${V2}mL at ${M2}M from a ${M1}M source.`,
-        'M2': `${scenario} <b>${comp.name}</b>. If exactly ${V1}mL of ${M1}M solution is diluted to a total of ${V2}mL, find the <b>new Molarity (M2)</b>.`,
-        'V2': `${scenario} <b>${comp.name}</b>. To what <b>final volume (V2)</b> must you dilute ${V1}mL of ${M1}M to reach ${M2}M?`,
-        'mass': `${scenario} <b>${comp.name}</b>. How many <b>grams</b> are needed to prepare the initial ${V1}mL of ${M1}M stock solution?`
-    };
-
-    // UI Updates
+    // Set Input Values UI
     document.getElementById('dil-compound').value = comp.name;
     document.getElementById('dil-molarMass').value = comp.mm;
-    
-    // Safety Feedback (Immediate scan results)
-    const feedback = document.getElementById("dil-feedback");
-    feedback.classList.remove("hidden");
-    feedback.className = "p-4 rounded-xl text-xs bg-cyan-900/30 text-cyan-300 border border-cyan-500/50 mb-4";
-    feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> ${safety}`;
 
+    // Logic for setting up the "Knowns" vs "Unknowns"
     if(type === 'V1') {
         document.getElementById('dil-stockConc').value = M1;
         document.getElementById('dil-targetConc').value = M2;
@@ -3221,36 +4191,79 @@ function generateDilutionProblem() {
         currentSolvingFor = "Required Mass";
     }
 
-    document.getElementById('dil-problem-sentence').innerHTML = templates[type];
+    // 3. INITIAL UI PLACEHOLDER (Instant)
+    const problemSentence = document.getElementById('dil-problem-sentence');
+    const feedback = document.getElementById("dil-feedback");
+    
+    problemSentence.innerHTML = `<span class="animate-pulse">Accessing Encrypted Mission Brief...</span>`;
+    feedback.classList.remove("hidden");
+    feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> Analyzing ${comp.name} safety protocols...`;
+    feedback.className = "p-4 rounded-xl text-xs bg-cyan-900/30 text-cyan-300 border border-cyan-500/50 mb-4";
+
+    // 4. PUTER AI DYNAMIC GENERATION
+    try {
+        // Define the prompt for the problem and safety
+        const prompt = `Act as a Laboratory Command AI. 
+        1. Create a 1-sentence sci-fi or medical mission scenario involving ${comp.name}.
+        2. Provide one specific safety warning for ${comp.name}.
+        Format: MISSION_TEXT | SAFETY_TEXT`;
+
+        puter.ai.chat(prompt).then(response => {
+            // Check if this request is still valid (user hasn't clicked "New Problem" again)
+            if (lastDilutionRequest !== requestId) return;
+
+            const [aiMission, aiSafetyData] = response.message.content.split('|');
+
+            // Map variables for the template
+            const varMap = {
+                'V1': `Determine the <b>volume of stock (V1)</b> required to yield ${V2}mL at ${M2}M from a ${M1}M source.`,
+                'M2': `If exactly ${V1}mL of ${M1}M solution is diluted to a total of ${V2}mL, find the <b>new Molarity (M2)</b>.`,
+                'V2': `To what <b>final volume (V2)</b> must you dilute ${V1}mL of ${M1}M to reach ${M2}M?`,
+                'mass': `How many <b>grams</b> are needed to prepare the initial ${V1}mL of ${M1}M stock solution?`
+            };
+
+            // Update UI with AI content
+            problemSentence.innerHTML = `${aiMission.trim()} <b>${comp.name}</b>. ${varMap[type]}`;
+            feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> ${aiSafetyData.trim()}`;
+        });
+    } catch (err) {
+        problemSentence.innerHTML = `Manual Override: Calculate ${currentSolvingFor} for ${comp.name}.`;
+        feedback.innerHTML = `📡 <b>SYSTEM SCAN:</b> Standard safety protocols apply.`;
+    }
+
     updateDilGuide('compound');
 }
 
+// Logic for Checking Answers (Precise Math)
 function checkDilutionAnswer() {
     const studentValue = document.getElementById("dil-studentAnswer").value;
     const student = parseFloat(studentValue);
     const feedback = document.getElementById("dil-feedback");
     
-    if(isNaN(student)) return alert("CRITICAL: Input detected as Non-Numerical. Terminal requires a valid value.");
+    if(isNaN(student)) return alert("CRITICAL: Input detected as Non-Numerical.");
 
     dilAttempts++;
     feedback.classList.remove("hidden");
+    
+    // Accuracy check within 2% margin
     const isCorrect = Math.abs(student - currentCorrectAnswer) < (currentCorrectAnswer * 0.02);
 
     if(isCorrect) {
         feedback.className = "p-4 rounded-xl text-sm flex bg-green-500/20 text-green-400 border border-green-500";
-        feedback.innerHTML = `⚡ <b>VERIFIED:</b> Calculation precision within limits. ${currentSolvingFor} is confirmed as ${currentCorrectAnswer}.`;
+        feedback.innerHTML = `⚡ <b>VERIFIED:</b> ${currentSolvingFor} is ${currentCorrectAnswer}. Data synced.`;
         document.getElementById("dil-verifyBtn").disabled = true;
     } else {
         if(dilAttempts < 3) {
             feedback.className = "p-4 rounded-xl text-sm flex bg-yellow-500/20 text-yellow-400 border border-yellow-500";
-            feedback.innerHTML = `⚠️ <b>MISMATCH:</b> Analytical discrepancy found (${dilAttempts}/3). Recalculate using $M_1V_1 = M_2V_2$.`;
+            feedback.innerHTML = `⚠️ <b>MISMATCH:</b> (${dilAttempts}/3). Recalculate using $M_1V_1 = M_2V_2$.`;
         } else {
             feedback.className = "p-4 rounded-xl text-sm flex bg-red-500/20 text-red-400 border border-red-500";
-            feedback.innerHTML = `❌ <b>FAILURE:</b> Protocol rejected. Correct value: ${currentCorrectAnswer}. Resetting terminal.`;
+            feedback.innerHTML = `❌ <b>FAILURE:</b> Correct value: ${currentCorrectAnswer}.`;
             document.getElementById("dil-verifyBtn").disabled = true;
         }
     }
 }
+            
 
 function updateDilGuide(field) {
     const guideText = document.getElementById('guide-text');
