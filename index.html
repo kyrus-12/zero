@@ -3362,22 +3362,45 @@ function showDefinition(type) {
 
 // --- MISSION & DATA RENDERER ---
 
-// Global variable to keep track of the current mission index
-let currentOpeningIndex = 0; 
-
 async function renderStoryAndData() {
-    // 1. COLLECT DATA
     const comp = document.getElementById('sol-compound').value || "---";
     const mm = document.getElementById('sol-molarMass').value || "---";
     const m = document.getElementById('sol-molarity').value || "---";
     const v = document.getElementById('sol-volume').value || "---";
     const g = document.getElementById('sol-grams').value || "---";
     
-    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams']; // Assumed variable name
     const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
     const target = emptyFields.length === 1 ? emptyFields[0] : null;
 
-    // 2. GENERATE STORY & DATA SCAN (Synchronous - Instant)
+    // --- NEW: AI SAFETY SCAN BLOCK ---
+    let safetyBriefing = `// [AI SAFETY SCAN]: Waiting for compound name...`;
+    
+    if (comp !== "---" && comp.length > 1) {
+        try {
+            // Using Puter AI to fetch rapid safety feedback
+            const prompt = `Provide a 3-line lab safety brief for ${comp}: 
+                            Line 1: Main hazards (GHS). 
+                            Line 2: Handling (PPE). 
+                            Line 3: Proper disposal method. 
+                            Keep it concise for a small digital scratchpad.`;
+            
+            const response = await puter.ai.chat(prompt);
+            safetyBriefing = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
+        } catch (error) {
+            safetyBriefing = `// [AI SAFETY SCAN]: Offline or compound not recognized.`;
+        }
+    }
+
+    // 1. DATA SCAN BLOCK (Same as yours)
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
+    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
+    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+    // 2. ROBUST MISSION LIBRARY (Same as yours)
     const library = [
         { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
         { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
@@ -3388,42 +3411,23 @@ async function renderStoryAndData() {
         { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
     ];
 
+    let currentOpeningIndex = 0; // Ensure this is defined globally or passed in
     let filtered = library.filter(s => s.hides === target);
     let storyText = filtered.length > 0 
         ? filtered[currentOpeningIndex % filtered.length].text 
         : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
 
-    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
-    givenDisplay += `SUBSTANCE: ${comp}\n`;
-    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
-    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
-    if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
-    if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
-
-    // 3. INITIAL RENDER (Instant Update)
+    // 3. UPDATE VISUALS
     const scratchpad = document.getElementById('sol-scratchpad');
-    let safetyPlaceholder = `// [AI SAFETY SCAN]: Analyzing ${comp}...`;
     
-    const buildHeader = (safety) => `${storyText}\n\n${safety}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+    // Combine Story + Safety + Data
+    const headerString = `${storyText}\n\n${safetyBriefing}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
     
-    // Show the "Analyzing..." version immediately
-    scratchpad.value = buildHeader(safetyPlaceholder);
-
-    // 4. BACKGROUND AI FETCH (Doesn't block the rest of the script)
-    if (comp !== "---" && comp.length > 1) {
-        // We don't use 'await' here so the function continues to the math updates
-        puter.ai.chat(`Identify ${comp}. 1.Hazards. 2.PPE. 3.Disposal. Max 30 words.`)
-            .then(response => {
-                const safetyContent = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
-                // Update the scratchpad again with the real data once it arrives
-                scratchpad.value = buildHeader(safetyContent);
-            })
-            .catch(() => {
-                scratchpad.value = buildHeader(`// [AI SAFETY SCAN]: Safety data unavailable.`);
-            });
+    if(!scratchpad.value || scratchpad.value.includes("// ---")) {
+        scratchpad.value = headerString; // Directly setting value so AI info stays visible
     }
-
-    // 5. UPDATE MATH VISUALS (Instant)
+    
+    // Ensure this function exists in your main script
     if (typeof updateFractionDisplay === "function") {
         updateFractionDisplay(target, mm, m, v, g);
     }
