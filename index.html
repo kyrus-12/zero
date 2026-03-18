@@ -3414,31 +3414,30 @@ function updateFractionDisplay(target, mm, m, v, g) {
     let html = `<div class="flex items-center justify-center space-x-2 text-sm">`;
 
     if (target === 'sol-grams') {
-        // g = (V L) * (M mol / 1 L) * (MM g / 1 mol)
-        html += `<span>? g = </span>`;
-        html += `<div class="${box}"><span>${v} <span class="${cancel}">L</span></span></div>`;
-        html += `<span>×</span>`;
-        html += `<div class="${box}"><span>${m} <span class="${cancel}">mol</span></span><div class="${line}">1 <span class="${cancel}">L</span></div></div>`;
-        html += `<span>×</span>`;
-        html += `<div class="${box}"><span>${mm} g</span><div class="${line}">1 <span class="${cancel}">mol</span></div></div>`;
-    } 
-    else if (target === 'sol-molarity') {
-        // M = (g / MM g) * (1 / V L)
-        html += `<span>? mol/L = </span>`;
-        html += `<div class="${box}"><span>${g} <span class="${cancel}">g</span></span><div class="${line}">${mm} <span class="${cancel}">g</span></div></div>`;
-        html += `<span>×</span>`;
-        html += `<div class="${box}"><span>1 mol</span><div class="${line}">${v} L</div></div>`;
-    } 
-    else if (target === 'sol-volume') {
-        // V = (g / MM g) * (1 L / M mol)
-        html += `<span>? L = </span>`;
-        html += `<div class="${box}"><span>${g} <span class="${cancel}">g</span></span><div class="${line}">${mm} <span class="${cancel}">g</span></div></div>`;
-        html += `<span>×</span>`;
-        html += `<div class="${box}"><span>1 <span class="${cancel}">mol</span></span><div class="${line}">1 L</div></div>`;
-        html += `<span>×</span>`;
-        html += `<div class="${box}"><span>1 L</span><div class="${line}">${m} <span class="${cancel}">mol</span></div></div>`;
-    }
-
+    // g = (V L) * (M mol / 1 L) * (MM g / 1 mol)
+    html += `<span>? g = </span>`;
+    html += `<div class="${box}"><span>${v} <span class="${cancel}">L</span></span></div>`;
+    html += `<span>×</span>`;
+    html += `<div class="${box}"><span>${m} <span class="${cancel}">mol</span></span><div class="${line}">1 <span class="${cancel}">L</span></div></div>`;
+    html += `<span>×</span>`;
+    html += `<div class="${box}"><span>${mm} g</span><div class="${line}">1 <span class="${cancel}">mol</span></div></div>`;
+} 
+else if (target === 'sol-molarity') {
+    // M = (g / MM g) * (1 / V L)
+    html += `<span>? mol/L = </span>`;
+    html += `<div class="${box}"><span>${g} <span class="${cancel}">g</span></span><div class="${line}">${mm} <span class="${cancel}">g</span></div></div>`;
+    html += `<span>×</span>`;
+    html += `<div class="${box}"><span>1 mol</span><div class="${line}">${v} L</div></div>`;
+} 
+else if (target === 'sol-volume') {
+    // V = (g / MM g) * (1 L / M mol)
+    html += `<span>? L = </span>`;
+    html += `<div class="${box}"><span>${g} <span class="${cancel}">g</span></span><div class="${line}">${mm} <span class="${cancel}">g</span></div></div>`;
+    html += `<span>×</span>`;
+    // Removed the extra wrong fraction: 1 mol / 1 L
+    html += `<div class="${box}"><span>1 L</span><div class="${line}">${m} <span class="${cancel}">mol</span></div></div>`;
+}
+    
     html += `</div>`;
     display.innerHTML = html;
 }
