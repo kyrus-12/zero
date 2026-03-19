@@ -3337,74 +3337,78 @@ async function getSafetyFeedback(compound) {
         console.error("AI Safety Scan Failed:", error);
         return "\n[Safety Scan Offline]\n";
     }
-}
-
+    
 async function renderStoryAndData() {
-    // 1. SELECT ELEMENTS SAFELY
-    const elComp = document.getElementById('sol-compound');
-    const elMm = document.getElementById('sol-molarMass');
-    const elM = document.getElementById('sol-molarity');
-    const elV = document.getElementById('sol-volume');
-    const elG = document.getElementById('sol-grams');
+    // 1. SELECT ELEMENTS
+    const comp = document.getElementById('sol-compound').value || "---";
+    const mm = document.getElementById('sol-molarMass').value || "";
+    const m = document.getElementById('sol-molarity').value || "";
+    const v = document.getElementById('sol-volume').value || "";
+    const g = document.getElementById('sol-grams').value || "";
     const scratchpad = document.getElementById('sol-scratchpad');
 
-    // 2. EXTRACT VALUES (with fallback to "---")
-    const comp = elComp?.value || "---";
-    const mm = elMm?.value || "---";
-    const m = elM?.value || "---";
-    const v = elV?.value || "---";
-    const g = elG?.value || "---";
+    // 2. TARGET IDENTIFICATION (Fixes the "Standby" bug)
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
+    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
+    const target = emptyFields.length === 1 ? emptyFields[0] : null;
 
-    // 3. IDENTIFY THE TARGET (The one empty field)
-    const stoichFields = [
-        { id: 'sol-molarity', val: m },
-        { id: 'sol-volume', val: v },
-        { id: 'sol-grams', val: g }
-    ];
-    
-    // Find which of the 3 main variables is missing
-    const empty = stoichFields.filter(field => field.val === "" || field.val === "---");
-    const target = empty.length === 1 ? empty[0].id : null;
-
-    // 4. DATA VALIDATION (The "Incoming Scan" text)
-    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
-    givenDisplay += `SUBSTANCE: ${comp.toUpperCase()}\n`;
-    if (mm !== "---") givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
-    if (m !== "---" && target !== 'sol-molarity') givenDisplay += `TARGET_CONC: ${m} M\n`;
-    if (v !== "---" && target !== 'sol-volume')   givenDisplay += `REQ_VOLUME: ${v} L\n`;
-    if (g !== "---" && target !== 'sol-grams')    givenDisplay += `SAMPLE_MASS: ${g} g\n`;
-
-    // 5. AI SAFETY INTEGRATION (Puter AI)
-    let safetyInfo = "";
-    if (comp !== "---" && comp.length > 2) {
-        scratchpad.placeholder = "☣️ ANALYZING CHEMICAL PROPERTIES...";
-        try {
-            const prompt = `Provide brief lab safety for ${comp}: 1. Hazards, 2. Handling, 3. Disposal. Max 50 words.`;
-            const response = await puter.ai.chat(prompt);
-            safetyInfo = `\n[SAFETY ANALYSIS]\n${response}\n${'-'.repeat(30)}\n`;
-        } catch (e) {
-            safetyInfo = `\n[SAFETY DATA UNAVAILABLE]\n`;
+    // 3. STOICHIOMETRY MATH (The missing piece)
+    let calculatedValue = "???";
+    if (target && mm > 0) {
+        const molarMass = parseFloat(mm);
+        if (target === 'sol-grams' && m && v) {
+            calculatedValue = (parseFloat(m) * parseFloat(v) * molarMass).toFixed(2) + " g";
+        } else if (target === 'sol-molarity' && g && v) {
+            calculatedValue = (parseFloat(g) / (molarMass * parseFloat(v))).toFixed(4) + " M";
+        } else if (target === 'sol-volume' && g && m) {
+            calculatedValue = (parseFloat(g) / (molarMass * parseFloat(m))).toFixed(3) + " L";
         }
     }
 
-    // 6. RENDER TO SCRATCHPAD
-    // We combine the story, the data scan, and the AI safety feedback
-    const storyText = getStory(target, comp, v, m, g); // Helper function below
+    // 4. DATA SCAN BLOCK (Uses exact input values)
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+    givenDisplay += `SUBSTANCE: ${comp.toUpperCase()}\n`;
+    givenDisplay += `MOLAR_MASS: ${mm || "---"} g/mol\n`;
+    if (target !== 'sol-molarity' && m) givenDisplay += `TARGET_CONC: ${m} M\n`;
+    if (target !== 'sol-volume' && v)   givenDisplay += `REQ_VOLUME: ${v} L\n`;
+    if (target !== 'sol-grams' && g)    givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+    // 5. MISSION LIBRARY
+    const library = [
+        { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+        { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' }
+    ];
+
+    let filtered = library.filter(s => s.hides === target);
+    let storyText = filtered.length > 0 
+        ? filtered[0].text 
+        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+
+    // 6. PUTER AI SAFETY FEEDBACK
+    let safetyInfo = "\n[ANALYZING HAZARDS...]\n";
+    if (comp !== "---" && comp.length > 1) {
+        try {
+            // This is the call to Puter AI
+            const response = await puter.ai.chat(`Safety for ${comp}: Hazards, Handling, Disposal. Very brief.`);
+            safetyInfo = `\n⚠️ SAFETY PROTOCOL:\n${response}\n`;
+        } catch (e) {
+            safetyInfo = `\n[SAFETY OFFLINE]\n`;
+        }
+    }
+
+    // 7. FINAL RENDER
+    const headerString = `${storyText}\n\n${givenDisplay}${safetyInfo}\n${'-'.repeat(30)}\nPREDICTION: ${calculatedValue}`;
     
-    scratchpad.value = `${storyText}\n\n${givenDisplay}${safetyInfo}\nPROCEED WITH CALCULATIONS:`;
+    // Update the scratchpad
+    scratchpad.value = headerString;
+
+    // Optional: Update a separate prediction box if you have one
+    const predictionBox = document.querySelector('.prediction-display'); // Adjust selector as needed
+    if(predictionBox) predictionBox.innerText = calculatedValue;
 }
-    
-function getStory(target, comp, v, m, g) {
-    if (!target) return "MISSION STANDBY: Please input Molar Mass and any 2 other variables.";
-    
-    const missions = {
-        'sol-grams': `CRITICAL: We need to synthesize a ${m}M solution of ${comp}. Calculate the mass required for ${v}L.`,
-        'sol-molarity': `CONTAMINATION ALERT: ${g}g of ${comp} was detected in ${v}L of water. Determine the molar concentration.`,
-        'sol-volume': `STOCKS LOW: We only have ${g}g of ${comp} left. What is the maximum volume (L) of ${m}M solution we can prepare?`
-    };
-    
-    return missions[target] || "Awaiting Scan...";
-}
+
+
     
     
 // --- DIMENSIONAL ANALYSIS DISPLAY (The "Realistic" Part) ---
