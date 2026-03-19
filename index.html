@@ -3319,37 +3319,42 @@ function showDefinition(type) {
 }
 
 // --- MISSION & DATA RENDERER ---
+
+async function getSafetyFeedback(compound) {
+    if (!compound || compound === "---" || compound.length < 2) return "";
+
+    const prompt = `Act as a lab safety officer. For the chemical "${compound}", provide:
+    1. Hazards (Brief)
+    2. Proper Handling (PPE)
+    3. Disposal Method.
+    Keep it concise (max 4 lines).`;
+
+    try {
+        // Calling Puter's AI model
+        const response = await puter.ai.chat(prompt);
+        return `\n⚠️ SAFETY PROTOCOL [${compound.toUpperCase()}]:\n${response}\n${'-'.repeat(30)}\n`;
+    } catch (error) {
+        console.error("AI Safety Scan Failed:", error);
+        return "\n[Safety Scan Offline]\n";
+    }
+}
+
+    
+    // Add 'async' here
 async function renderStoryAndData() {
     const comp = document.getElementById('sol-compound').value || "---";
     const mm = document.getElementById('sol-molarMass').value || "---";
     const m = document.getElementById('sol-molarity').value || "---";
     const v = document.getElementById('sol-volume').value || "---";
     const g = document.getElementById('sol-grams').value || "---";
+    const scratchpad = document.getElementById('sol-scratchpad');
     
-    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams']; // Assumed variable name
+    // Existing logic for finding the target
+    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams']; 
     const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
     const target = emptyFields.length === 1 ? emptyFields[0] : null;
 
-    // --- NEW: AI SAFETY SCAN BLOCK ---
-    let safetyBriefing = `// [AI SAFETY SCAN]: Waiting for compound name...`;
-    
-    if (comp !== "---" && comp.length > 1) {
-        try {
-            // Using Puter AI to fetch rapid safety feedback
-            const prompt = `Provide a 3-line lab safety brief for ${comp}: 
-                            Line 1: Main hazards (GHS). 
-                            Line 2: Handling (PPE). 
-                            Line 3: Proper disposal method. 
-                            Keep it concise for a small digital scratchpad.`;
-            
-            const response = await puter.ai.chat(prompt);
-            safetyBriefing = `// --- AI SAFETY PROTOCOL: ${comp.toUpperCase()} ---\n${response.message.content.trim()}`;
-        } catch (error) {
-            safetyBriefing = `// [AI SAFETY SCAN]: Offline or compound not recognized.`;
-        }
-    }
-
-    // 1. DATA SCAN BLOCK (Same as yours)
+    // 1. DATA SCAN BLOCK
     let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
     givenDisplay += `SUBSTANCE: ${comp}\n`;
     givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
@@ -3357,35 +3362,32 @@ async function renderStoryAndData() {
     if (target !== 'sol-volume' && v !== "---") givenDisplay += `REQ_VOLUME: ${v} L\n`;
     if (target !== 'sol-grams' && g !== "---") givenDisplay += `SAMPLE_MASS: ${g} g\n`;
 
-    // 2. ROBUST MISSION LIBRARY (Same as yours)
+    // 2. MISSION LIBRARY
     const library = [
         { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
         { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
-        { text: `Synthesis Protocol: Weigh out ${comp} for a ${v}L, ${m}M batch.`, hides: 'sol-grams' },
         { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
-        { text: `Quality Control: Determine the concentration of ${g}g ${comp} in ${v}L.`, hides: 'sol-molarity' },
-        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' },
-        { text: `Extraction: Adjust the reservoir to ${m}M using our entire ${g}g stock of ${comp}.`, hides: 'sol-volume' }
+        { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' }
     ];
 
-    let currentOpeningIndex = 0; // Ensure this is defined globally or passed in
     let filtered = library.filter(s => s.hides === target);
     let storyText = filtered.length > 0 
-        ? filtered[currentOpeningIndex % filtered.length].text 
-        : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
+        ? filtered[0].text 
+        : `Mission Standby: Provide Molar Mass + any 2 variables.`;
 
-    // 3. UPDATE VISUALS
-    const scratchpad = document.getElementById('sol-scratchpad');
+    // 3. AI SAFETY FEEDBACK INTEGRATION
+    // Show a loading state on the scratchpad while AI thinks
+    scratchpad.placeholder = "Scanning for hazards...";
     
-    // Combine Story + Safety + Data
-    const headerString = `${storyText}\n\n${safetyBriefing}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+    const safetyInfo = await getSafetyFeedback(comp);
+
+    // 4. UPDATE VISUALS
+    const headerString = `${storyText}\n\n${givenDisplay}${safetyInfo}\n`;
     
-    if(!scratchpad.value || scratchpad.value.includes("// ---")) {
-        scratchpad.value = headerString; // Directly setting value so AI info stays visible
-    }
+    // Set the value so the user sees the safety info and story on the "paper"
+    scratchpad.value = headerString + "Step 1: Write given values...\n";
     
-    // Ensure this function exists in your main script
-    if (typeof updateFractionDisplay === "function") {
+    if(typeof updateFractionDisplay === "function") {
         updateFractionDisplay(target, mm, m, v, g);
     }
 }
