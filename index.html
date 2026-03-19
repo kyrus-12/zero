@@ -1206,7 +1206,7 @@ footer.global-nav {
       <h2 class="text-xl font-bold text-blue-300">Criterion-Based Assessment</h2>
       <button class="btn" onclick="closeCriterionModal()">✕</button>
     </div>
-    <p class="text-sm text-gray-400 mb-3">Enter a topic to generate randomized items. Answers are hidden — click each button to reveal.</p>
+    <p class="text-sm text-gray-400 mb-3">Enter a topic to generate randomized items.</p>
     <div class="flex flex-wrap gap-2 mb-4">
       <input id="criterion-keywords" placeholder="e.g., motion, energy" class="flex-1 p-2 rounded bg-transparent border border-blue-700"/>
       <input id="criterion-count" type="number" min="1" value="5" class="w-24 p-2 rounded bg-transparent border border-blue-700"/>
@@ -1223,7 +1223,7 @@ footer.global-nav {
       <h2 class="text-xl font-bold text-blue-300">Portfolio-Based Assessment</h2>
       <button class="btn" onclick="closePortfolioModal()">✕</button>
     </div>
-    <p class="text-sm text-gray-400 mb-3">Generate a table-style portfolio guide from Gemini based on subject and depth.</p>
+    <p class="text-sm text-gray-400 mb-3">Generate a table-style portfolio guide based on subject and depth.</p>
     <div class="flex flex-wrap gap-2 mb-4">
       <input id="portfolio-subject" placeholder="e.g., Chemistry – Reactions" class="flex-1 p-2 rounded bg-transparent border border-blue-700"/>
       <select id="portfolio-depth" class="w-40 p-2 rounded bg-transparent border border-blue-700">
@@ -1266,7 +1266,7 @@ footer.global-nav {
 </div>
     
 <!-- STEP 1: Subtopics (branches) -->
-<div class="text-2xl hidden grid grid-cols-1 md:grid-cols-3 gap-6" id="step-1"></div>
+<div class="hidden grid grid-cols-1 md:grid-cols-5 gap-6" id="step-1"></div>
     
 <!-- STEP 2: Mode selection -->
 <div class="hidden grid grid-cols-1 md:grid-cols-2 gap-6" id="step-2">
@@ -1284,10 +1284,10 @@ footer.global-nav {
 </div>
     
 <!-- STEP 3A: Proficiency (descriptor 1-5) -->
-<div class="text-2xl hidden grid grid-cols-2 md:grid-cols-5 gap-4" id="step-3a"></div>
+<div class="hidden grid grid-cols-2 md:grid-cols-5 gap-4" id="step-3a"></div>
     
 <!-- STEP 3B: Skill levels (1-4) -->
-<div class="text-2xl hidden grid grid-cols-2 md:grid-cols-4 gap-4" id="step-3b"></div>
+<div class="hidden grid grid-cols-2 md:grid-cols-4 gap-4" id="step-3b"></div>
     
 <!-- STEP 4: Chat -->
 <div class="hidden" id="step-4">
