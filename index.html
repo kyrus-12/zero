@@ -3318,11 +3318,13 @@ function showDefinition(type) {
     }
 }
 
-// 1. GLOBAL TIMER FOR SPEED (Prevents AI from firing on every letter)
-let aiDebounceTimer;
+
+
+// Keep this at the very top of your script file
+let aiDebounceTimer; 
 
 async function renderStoryAndData() {
-    // --- IMMEDIATE DATA CAPTURE ---
+    // 1. GET RAW INPUTS (Matches your HTML IDs exactly)
     const comp = document.getElementById('sol-compound').value || "---";
     const mm = document.getElementById('sol-molarMass').value || "---";
     const m = document.getElementById('sol-molarity').value || "---";
@@ -3330,18 +3332,20 @@ async function renderStoryAndData() {
     const g = document.getElementById('sol-grams').value || "---";
     const scratchpad = document.getElementById('sol-scratchpad');
 
+    // 2. FIND THE MISSING VARIABLE
     const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
     const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
     const target = emptyFields.length === 1 ? emptyFields[0] : null;
 
-    // --- 1. RENDER NUMBERS IMMEDIATELY (NO DELAY) ---
+    // 3. GENERATE SCAN TEXT (Shows exactly what you typed)
     let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
-    givenDisplay += `SUBSTANCE: ${comp}\n`;
+    givenDisplay += `SUBSTANCE: ${comp.toUpperCase()}\n`;
     givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
     if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
     if (target !== 'sol-volume' && v !== "---")   givenDisplay += `REQ_VOLUME: ${v} L\n`;
     if (target !== 'sol-grams' && g !== "---")    givenDisplay += `SAMPLE_MASS: ${g} g\n`;
 
+    // 4. PICK THE STORY
     const library = [
         { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
         { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
@@ -3349,36 +3353,38 @@ async function renderStoryAndData() {
     ];
 
     let filtered = library.filter(s => s.hides === target);
-    let storyText = (filtered.length > 0) ? filtered[0].text : `Mission Standby...`;
+    let storyText = (filtered.length > 0) ? filtered[0].text : `Mission Standby: Awaiting final variable...`;
 
-    // Show the numbers on the scratchpad RIGHT NOW
+    // 5. RENDER THE NUMBERS FIRST (Instant Update)
     const baseText = `${storyText}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
     scratchpad.value = baseText + "[SCANNING FOR SAFETY DATA...]";
 
-    // Update fractions immediately
+    // 6. CALL THE PUTER AI (The "Laboratory AI")
+    clearTimeout(aiDebounceTimer);
+    aiDebounceTimer = setTimeout(async () => {
+        // Only trigger AI if there's a real chemical name (more than 2 letters)
+        if (comp !== "---" && comp.length > 2) {
+            try {
+                // This is where Puter AI analyzes the problem
+                const safetyResponse = await puter.ai.chat(
+                    `Analyze this chemical for lab safety: ${comp}. 
+                    Tell me: 1. Hazard, 2. Handling (PPE), 3. Disposal. 
+                    Be extremely concise (max 50 words).`
+                );
+                
+                // Update the scratchpad with the AI's safety feedback
+                scratchpad.value = baseText + `⚠️ AI SAFETY FEEDBACK:\n${safetyResponse}\n`;
+            } catch (err) {
+                scratchpad.value = baseText + `\n[Safety Analysis Offline]\n`;
+            }
+        }
+    }, 800); // 800ms delay: Fast enough to feel "live", slow enough to not lag while typing
+
+    // 7. SYNC THE FRACTIONS
     if (typeof updateFractionDisplay === "function") {
         updateFractionDisplay(target, mm, m, v, g);
     }
-
-    // --- 2. ASYNC AI SAFETY (NON-BLOCKING) ---
-    clearTimeout(aiDebounceTimer);
-    aiDebounceTimer = setTimeout(async () => {
-        if (comp !== "---" && comp.length > 2) {
-            try {
-                const safetyResponse = await puter.ai.chat(
-                    `Safety for ${comp}: Hazards, Handling, Disposal. (Max 20 words)`
-                );
-                // Only update the scratchpad if the user hasn't typed something else already
-                scratchpad.value = baseText + `\n⚠️ SAFETY:\n${safetyResponse}\n`;
-            } catch (err) {
-                scratchpad.value = baseText + `\n[Safety Data Offline]\n`;
-            }
-        }
-    }, 1000); // Waits for 1 second of "no typing" before calling AI
 }
-
-
-
     
     
 // --- DIMENSIONAL ANALYSIS DISPLAY (The "Realistic" Part) ---
