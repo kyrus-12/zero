@@ -3319,25 +3319,28 @@ function showDefinition(type) {
 }
 
 
-
-// Keep this at the very top of your script file
 let aiDebounceTimer; 
 
 async function renderStoryAndData() {
-    // 1. GET RAW INPUTS (Matches your HTML IDs exactly)
-    const comp = document.getElementById('sol-compound').value || "---";
+    // --- 1. CAPTURE DATA (Exact values) ---
+    const comp = document.getElementById('sol-compound').value.trim() || "---";
     const mm = document.getElementById('sol-molarMass').value || "---";
     const m = document.getElementById('sol-molarity').value || "---";
     const v = document.getElementById('sol-volume').value || "---";
     const g = document.getElementById('sol-grams').value || "---";
     const scratchpad = document.getElementById('sol-scratchpad');
 
-    // 2. FIND THE MISSING VARIABLE
-    const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
-    const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
-    const target = emptyFields.length === 1 ? emptyFields[0] : null;
+    // --- 2. TARGET LOGIC ---
+    const mVal = document.getElementById('sol-molarity').value;
+    const vVal = document.getElementById('sol-volume').value;
+    const gVal = document.getElementById('sol-grams').value;
+    
+    let target = null;
+    if (!mVal && vVal && gVal) target = 'sol-molarity';
+    else if (mVal && !vVal && gVal) target = 'sol-volume';
+    else if (mVal && vVal && !gVal) target = 'sol-grams';
 
-    // 3. GENERATE SCAN TEXT (Shows exactly what you typed)
+    // --- 3. RENDER TEXT IMMEDIATELY ---
     let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
     givenDisplay += `SUBSTANCE: ${comp.toUpperCase()}\n`;
     givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
@@ -3345,46 +3348,44 @@ async function renderStoryAndData() {
     if (target !== 'sol-volume' && v !== "---")   givenDisplay += `REQ_VOLUME: ${v} L\n`;
     if (target !== 'sol-grams' && g !== "---")    givenDisplay += `SAMPLE_MASS: ${g} g\n`;
 
-    // 4. PICK THE STORY
     const library = [
         { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
         { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
         { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' }
     ];
 
-    let filtered = library.filter(s => s.hides === target);
-    let storyText = (filtered.length > 0) ? filtered[0].text : `Mission Standby: Awaiting final variable...`;
+    let filtered = library.find(s => s.hides === target);
+    let storyText = filtered ? filtered.text : `Mission Standby: Awaiting variables...`;
 
-    // 5. RENDER THE NUMBERS FIRST (Instant Update)
     const baseText = `${storyText}\n\n${givenDisplay}\n${'-'.repeat(30)}\n`;
+    
+    // Immediate UI update
     scratchpad.value = baseText + "[SCANNING FOR SAFETY DATA...]";
 
-    // 6. CALL THE PUTER AI (The "Laboratory AI")
+    // --- 4. THE PUTER AI (FAST FEEDBACK) ---
     clearTimeout(aiDebounceTimer);
     aiDebounceTimer = setTimeout(async () => {
-        // Only trigger AI if there's a real chemical name (more than 2 letters)
-        if (comp !== "---" && comp.length > 2) {
+        // AI triggers only if we have a chemical name and a target mission
+        if (comp !== "---" && comp.length >= 2 && target) {
             try {
-                // This is where Puter AI analyzes the problem
+                // Short, aggressive prompt for maximum speed
                 const safetyResponse = await puter.ai.chat(
-                    `Analyze this chemical for lab safety: ${comp}. 
-                    Tell me: 1. Hazard, 2. Handling (PPE), 3. Disposal. 
-                    Be extremely concise (max 50 words).`
+                    `Safety for ${comp}: List Hazard, PPE, Disposal. Max 30 words.`
                 );
                 
-                // Update the scratchpad with the AI's safety feedback
+                // Final render
                 scratchpad.value = baseText + `⚠️ AI SAFETY FEEDBACK:\n${safetyResponse}\n`;
             } catch (err) {
                 scratchpad.value = baseText + `\n[Safety Analysis Offline]\n`;
             }
         }
-    }, 800); // 800ms delay: Fast enough to feel "live", slow enough to not lag while typing
+    }, 500); // Reduced to 500ms for faster response
 
-    // 7. SYNC THE FRACTIONS
     if (typeof updateFractionDisplay === "function") {
         updateFractionDisplay(target, mm, m, v, g);
     }
 }
+
     
     
 // --- DIMENSIONAL ANALYSIS DISPLAY (The "Realistic" Part) ---
