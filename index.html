@@ -3319,94 +3319,65 @@ function showDefinition(type) {
 }
 
 // --- MISSION & DATA RENDERER ---
-
-async function getSafetyFeedback(compound) {
-    if (!compound || compound === "---" || compound.length < 2) return "";
-
-    const prompt = `Act as a lab safety officer. For the chemical "${compound}", provide:
-    1. Hazards (Brief)
-    2. Proper Handling (PPE)
-    3. Disposal Method.
-    Keep it concise (max 4 lines).`;
-
-    try {
-        // Calling Puter's AI model
-        const response = await puter.ai.chat(prompt);
-        return `\n⚠️ SAFETY PROTOCOL [${compound.toUpperCase()}]:\n${response}\n${'-'.repeat(30)}\n`;
-    } catch (error) {
-        console.error("AI Safety Scan Failed:", error);
-        return "\n[Safety Scan Offline]\n";
-    }
-    
 async function renderStoryAndData() {
-    // 1. SELECT ELEMENTS
     const comp = document.getElementById('sol-compound').value || "---";
-    const mm = document.getElementById('sol-molarMass').value || "";
-    const m = document.getElementById('sol-molarity').value || "";
-    const v = document.getElementById('sol-volume').value || "";
-    const g = document.getElementById('sol-grams').value || "";
+    const mm = document.getElementById('sol-molarMass').value || "---";
+    const m = document.getElementById('sol-molarity').value || "---";
+    const v = document.getElementById('sol-volume').value || "---";
+    const g = document.getElementById('sol-grams').value || "---";
     const scratchpad = document.getElementById('sol-scratchpad');
 
-    // 2. TARGET IDENTIFICATION (Fixes the "Standby" bug)
+    // 1. IMPROVED TARGET DETECTION
     const stoichFields = ['sol-molarity', 'sol-volume', 'sol-grams'];
     const emptyFields = stoichFields.filter(id => !document.getElementById(id).value);
     const target = emptyFields.length === 1 ? emptyFields[0] : null;
 
-    // 3. STOICHIOMETRY MATH (The missing piece)
-    let calculatedValue = "???";
-    if (target && mm > 0) {
-        const molarMass = parseFloat(mm);
-        if (target === 'sol-grams' && m && v) {
-            calculatedValue = (parseFloat(m) * parseFloat(v) * molarMass).toFixed(2) + " g";
-        } else if (target === 'sol-molarity' && g && v) {
-            calculatedValue = (parseFloat(g) / (molarMass * parseFloat(v))).toFixed(4) + " M";
-        } else if (target === 'sol-volume' && g && m) {
-            calculatedValue = (parseFloat(g) / (molarMass * parseFloat(m))).toFixed(3) + " L";
+    // 2. DATA SCAN BLOCK (Accurate Data Capture)
+    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
+    givenDisplay += `SUBSTANCE: ${comp}\n`;
+    givenDisplay += `MOLAR_MASS: ${mm} g/mol\n`;
+    if (target !== 'sol-molarity' && m !== "---") givenDisplay += `TARGET_CONC: ${m} M\n`;
+    if (target !== 'sol-volume' && v !== "---")   givenDisplay += `REQ_VOLUME: ${v} L\n`;
+    if (target !== 'sol-grams' && g !== "---")    givenDisplay += `SAMPLE_MASS: ${g} g\n`;
+
+    // 3. AI SAFETY FEEDBACK (Puter AI Integration)
+    let safetyBlock = "";
+    if (comp !== "---" && comp.length > 1) {
+        try {
+            // Puter AI Call: Specialized prompt for fast, structured safety info
+            const safetyResponse = await puter.ai.chat(
+                `For chemical "${comp}", provide: 1. Hazards, 2. Handling, 3. Disposal. Be extremely brief (max 30 words).`
+            );
+            safetyBlock = `\n[SAFETY PROTOCOL]\n${safetyResponse}\n`;
+        } catch (err) {
+            safetyBlock = `\n[SAFETY DATA OFFLINE]\n`;
         }
     }
 
-    // 4. DATA SCAN BLOCK (Uses exact input values)
-    let givenDisplay = `// --- INCOMING SCAN DATA ---\n`;
-    givenDisplay += `SUBSTANCE: ${comp.toUpperCase()}\n`;
-    givenDisplay += `MOLAR_MASS: ${mm || "---"} g/mol\n`;
-    if (target !== 'sol-molarity' && m) givenDisplay += `TARGET_CONC: ${m} M\n`;
-    if (target !== 'sol-volume' && v)   givenDisplay += `REQ_VOLUME: ${v} L\n`;
-    if (target !== 'sol-grams' && g)    givenDisplay += `SAMPLE_MASS: ${g} g\n`;
-
-    // 5. MISSION LIBRARY
+    // 4. MISSION LIBRARY (Existing Logic)
     const library = [
         { text: `Reactor breach! Inject ${v}L of ${comp} at ${m}M to neutralize.`, hides: 'sol-grams' },
+        { text: `Bio-dome requires ${v}L of ${m}M ${comp} nutrient solution.`, hides: 'sol-grams' },
         { text: `Analysis: ${g}g of ${comp} was found in ${v}L of runoff. Solve Molarity.`, hides: 'sol-molarity' },
         { text: `Resource Limit: We have ${g}g of ${comp}. How many Liters of ${m}M can we make?`, hides: 'sol-volume' }
     ];
 
     let filtered = library.filter(s => s.hides === target);
     let storyText = filtered.length > 0 
-        ? filtered[0].text 
+        ? filtered[currentOpeningIndex % filtered.length].text 
         : `Mission Standby: Provide Molar Mass + any 2 variables (M, L, or g).`;
 
-    // 6. PUTER AI SAFETY FEEDBACK
-    let safetyInfo = "\n[ANALYZING HAZARDS...]\n";
-    if (comp !== "---" && comp.length > 1) {
-        try {
-            // This is the call to Puter AI
-            const response = await puter.ai.chat(`Safety for ${comp}: Hazards, Handling, Disposal. Very brief.`);
-            safetyInfo = `\n⚠️ SAFETY PROTOCOL:\n${response}\n`;
-        } catch (e) {
-            safetyInfo = `\n[SAFETY OFFLINE]\n`;
-        }
-    }
-
-    // 7. FINAL RENDER
-    const headerString = `${storyText}\n\n${givenDisplay}${safetyInfo}\n${'-'.repeat(30)}\nPREDICTION: ${calculatedValue}`;
+    // 5. UPDATE VISUALS
+    const headerString = `${storyText}\n\n${givenDisplay}${safetyBlock}\n${'-'.repeat(30)}\n`;
     
-    // Update the scratchpad
-    scratchpad.value = headerString;
-
-    // Optional: Update a separate prediction box if you have one
-    const predictionBox = document.querySelector('.prediction-display'); // Adjust selector as needed
-    if(predictionBox) predictionBox.innerText = calculatedValue;
-}
+    // We update the value directly to ensure the AI feedback stays visible
+    scratchpad.value = headerString + "Enter dimensional analysis steps here...";
+    
+    // Maintain the fraction visual updates
+    if (typeof updateFractionDisplay === "function") {
+        updateFractionDisplay(target, mm, m, v, g);
+    }
+}    
 
 
     
