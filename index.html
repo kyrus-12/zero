@@ -3105,7 +3105,8 @@ function startLab(choice) {
         document.getElementById('phaseLabModal').classList.add('flex');
         initPhaseLab();  
 } else if (choice === 'particles') {
-        document.getElementById('particlesLabModal').classList.remove('hidden');
+        document.getElementById('particlesLabModal').class
+    List.remove('hidden');
         document.getElementById('particlesLabModal').classList.add('flex');
         initParticlesLab();  
 } else if (choice === 'concen') {
@@ -3119,15 +3120,18 @@ function startLab(choice) {
 
 
 
-    let dilAttempts = 0;
+            
+// --- GLOBAL STATE ---
+let aiDebounceTimer; 
+let dilAttempts = 0;
 let currentCorrectAnswer = 0;
 let currentSolvingFor = "";
 
-// Preserved for UI interaction
+// --- EDUCATIONAL GUIDES ---
 const dilGuides = {
     'compound': "The identity of the solute. This determines the chemical properties and the target of your scan.",
     'molarMass': "<b>Molar Mass (g/mol):</b> The sum of atomic weights. <br>Formula: <code>MM = mass / moles</code>",
-    'mass': "<b>Mass to Add (g):</b> Used when preparing the initial stock.",
+    'mass': "<b>Mass to Add (g):</b> Used when preparing the initial stock.<br>Formula: <code>mass = M1 × V1(L) × MM</code>",
     'stockConc': "<b>M1 (Stock Concentration):</b> The strength of the original solution.",
     'targetConc': "<b>M2 (Target Concentration):</b> The desired strength after dilution.",
     'stockVol': "<b>V1 (Stock Volume):</b> The amount of stock solution to pipet out.",
@@ -3135,46 +3139,42 @@ const dilGuides = {
     'answer': "<b>Stoichiometry Check:</b> Calculate the missing variable based on $M_1V_1 = M_2V_2$."
 };
 
-
-
-
 /**
  * PUTER AI: INDEPENDENT ANALYSIS ENGINE
- * Dynamically fetches safety data from the AI based on the generated problem.
+ * Generates live safety data based on the chemical and problem context.
  */
 async function runPuterAIScan(statusUpdate = null) {
     const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
     const problemText = document.getElementById('dil-problem-sentence').innerText;
     const scratchpad = document.getElementById('dil-scratchpad');
     
-    // 1. UI FEEDBACK: Show the "Scanning" state immediately
+    // 1. UI FEEDBACK: Show "Scanning" state immediately
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
     baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
     baseDisplay += `------------------------------------------------\n`;
 
-    // Preserve existing user notes if they exist
+    // Preserve existing user notes
     const currentContent = scratchpad.value;
     const userNotes = currentContent.includes('------------------------------------------------') 
         ? currentContent.split('------------------------------------------------').pop().trim() 
         : "// START CALCULATIONS...";
 
-    // Set temporary "Processing" view
     scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[ANALYZING REAGENT PROPERTIES...]\n------------------------------------------------\n\n" + userNotes;
 
     // 2. DEBOUNCED AI CALL
     clearTimeout(aiDebounceTimer);
     aiDebounceTimer = setTimeout(async () => {
         try {
-            // The Puter AI independently evaluates the chemical safety
+            // Independent AI evaluation using your provided logic
             const aiResponse = await puter.ai.chat(
-                `As a Lab Safety Officer, analyze: ${compound}. 
-                Scenario: ${problemText}. 
-                Provide 1. Specific Hazard, 2. Required PPE, 3. Disposal method. 
-                Tone: Technical, concise, max 30 words.`
+                `As a Lab Safety Officer, analyze the chemical: ${compound}. 
+                Context: ${problemText}. 
+                Briefly list: 1. Specific Hazard, 2. Required PPE, 3. Disposal method. 
+                Tone: Technical terminal, max 30 words.`
             );
 
-            // 3. FINAL RESPONSIVE UPDATE
+            // 3. RENDER RESPONSIVE UPDATE
             let finalOutput = baseDisplay;
             finalOutput += `🔍 SCAN COMPLETE:\n${aiResponse.trim()}\n`;
             
@@ -3184,9 +3184,7 @@ async function runPuterAIScan(statusUpdate = null) {
             finalOutput += `------------------------------------------------\n\n`;
             
             scratchpad.value = finalOutput + userNotes;
-            
-            // Auto-scroll scratchpad to top to show the scan results
-            scratchpad.scrollTop = 0;
+            scratchpad.scrollTop = 0; // Scroll to scan result
 
         } catch (err) {
             console.error("AI Scan Error:", err);
@@ -3196,15 +3194,30 @@ async function runPuterAIScan(statusUpdate = null) {
 }
 
 /**
+ * GENERATIVE SCENARIO ENGINE
+ * Builds the context for the AI to analyze.
+ */
+function generateDynamicScenario() {
+    const metals = ["Sodium", "Potassium", "Copper(II)", "Magnesium", "Calcium", "Iron(III)", "Zinc"];
+    const anions = ["Chloride", "Sulfate", "Nitrate", "Carbonate", "Hydroxide", "Oxide"];
+    const sectors = ["Medical Wing", "Industrial Plant", "Environmental Lab", "Research Sector 7"];
+    const tasks = ["Urgent Analysis", "Standard Protocol", "Contamination Check", "Synthesis Run"];
+
+    const name = `${metals[Math.floor(Math.random() * metals.length)]} ${anions[Math.floor(Math.random() * anions.length)]}`;
+    const mm = (Math.random() * 200 + 40).toFixed(2);
+    const context = `[${tasks[Math.floor(Math.random() * tasks.length)]} @ ${sectors[Math.floor(Math.random() * sectors.length)]}]`;
+
+    return { name, mm: parseFloat(mm), context };
+}
+
+/**
  * GENERATE PROBLEM & TRIGGER SCAN
- * This is the primary entry point.
  */
 async function generateDilutionProblem() {
-    // 1. Reset and Generate Data
     resetDilutionLab();
     const data = generateDynamicScenario();
     
-    // 2. Math & Logic
+    // Math Generation
     const M1 = (Math.random() * 4 + 1).toFixed(2);
     const V1 = (Math.random() * 50 + 5).toFixed(1);
     const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
@@ -3219,23 +3232,21 @@ async function generateDilutionProblem() {
         'mass': `${data.context} Find the **grams** of **${data.name}** (MM: ${mm}) for the initial ${V1}mL of ${M1}M stock.`
     };
 
-    // 3. Update DOM
+    // Update UI
     document.getElementById('dil-compound').value = data.name;
     document.getElementById('dil-molarMass').value = mm;
     document.getElementById('dil-problem-sentence').innerHTML = templates[type];
 
-    // 4. Store Correct Answer
-    if(type === 'V1') currentCorrectAnswer = parseFloat(V1);
-    else if(type === 'M2') currentCorrectAnswer = parseFloat(M2);
-    else if(type === 'V2') currentCorrectAnswer = parseFloat(V2);
-    else currentCorrectAnswer = (M1 * (V1 / 1000) * mm).toFixed(2);
+    // Set Answer Logic
+    if(type === 'V1') { currentCorrectAnswer = parseFloat(V1); currentSolvingFor = "V1"; }
+    else if(type === 'M2') { currentCorrectAnswer = parseFloat(M2); currentSolvingFor = "M2"; }
+    else if(type === 'V2') { currentCorrectAnswer = parseFloat(V2); currentSolvingFor = "V2"; }
+    else { currentCorrectAnswer = (M1 * (V1 / 1000) * mm).toFixed(2); currentSolvingFor = "Mass"; }
 
-    // 5. Trigger Responsive Scan
+    // Start Independent AI Scan
     await runPuterAIScan("REAGENT DETECTED: Synchronizing safety protocols...");
 }
 
-    
-    
 function updateDilGuide(field) {
     const guideBox = document.getElementById('guide-text');
     if (guideBox && dilGuides[field]) guideBox.innerHTML = dilGuides[field];
@@ -3244,11 +3255,12 @@ function updateDilGuide(field) {
 function resetDilutionLab() {
     dilAttempts = 0;
     ['dil-compound', 'dil-molarMass', 'dil-studentAnswer', 'dil-scratchpad'].forEach(id => {
-        if(document.getElementById(id)) document.getElementById(id).value = "";
+        const el = document.getElementById(id);
+        if(el) el.value = "";
     });
-    document.getElementById("dil-verifyBtn").disabled = false;
+    const verifyBtn = document.getElementById("dil-verifyBtn");
+    if(verifyBtn) verifyBtn.disabled = false;
 }
-    
 
     
     
