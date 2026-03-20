@@ -3250,6 +3250,59 @@ function updateDilGuide(field) {
     if (guideText && dilGuides[field]) guideText.innerHTML = dilGuides[field];
 }
 
+/**
+ * Puter AI: Laboratory Scanner & Safety Analyzer
+ * Scans the scenario text and compound input to generate real-time feedback.
+ */
+function runPuterAIScan() {
+    const problemText = document.getElementById('dil-problem-sentence').innerText;
+    const compound = document.getElementById('dil-compound').value.trim();
+    const scratchpad = document.getElementById('dil-scratchpad');
+    
+    // 1. Initialize the "Scanning" UI state
+    scratchpad.placeholder = "AI is analyzing lab environment...";
+    
+    // 2. Logic Engine: Detect Hazards based on Keywords
+    let hazards = [];
+    const lowerText = (problemText + " " + compound).toLowerCase();
+
+    if (lowerText.includes("acid")) hazards.push("CORROSIVE: Use secondary containment. Add acid to water (AA).");
+    if (lowerText.includes("base") || lowerText.includes("hydroxide")) hazards.push("CAUSTIC: Risk of chemical burns. Keep vinegar/neutralizer nearby.");
+    if (lowerText.includes("eth") || lowerText.includes("flam")) hazards.push("FLAMMABLE: Remove all ignition sources. Work in fume hood.");
+    if (lowerText.includes("nitrate") || lowerText.includes("oxide")) hazards.push("OXIDIZER: Keep away from organic materials.");
+    if (lowerText.includes("molar") && compound === "") hazards.push("DATA GAP: Please specify Compound for precise PPE scan.");
+
+    // 3. Construct the "Digital Scratch Paper" Output
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let aiResponse = `[PUTER AI SCAN - ${timestamp}]\n`;
+    aiResponse += `Target: ${compound || "Unknown Specimen"}\n`;
+    aiResponse += `--------------------------------\n`;
+    
+    if (hazards.length > 0) {
+        aiResponse += `⚠️ SAFETY PROTOCOLS DETECTED:\n`;
+        hazards.forEach(h => aiResponse += `• ${h}\n`);
+    } else {
+        aiResponse += `✅ Standard Lab PPE (Level 1) sufficient.\n`;
+    }
+
+    aiResponse += `\nPROMPT: M1V1 = M2V2 calculation ready.\n`;
+    aiResponse += `--------------------------------\n\n`;
+
+    // 4. Update the Scratchpad (preserving user's previous work below the scan)
+    const existingWork = scratchpad.value.split('--------------------------------').pop() || "";
+    scratchpad.value = aiResponse + existingWork.trim();
+}
+
+// Trigger the AI when a new problem is generated OR when the user types a compound
+document.querySelector('[onclick="generateDilutionProblem()"]').addEventListener('click', () => {
+    // Small delay to let the text change first
+    setTimeout(runPuterAIScan, 100); 
+});
+
+document.getElementById('dil-compound').addEventListener('change', runPuterAIScan);
+
+    
+    
 function resetDilutionLab() {
     dilAttempts = 0;
     const ids = ['dil-compound', 'dil-molarMass', 'dil-mass', 'dil-stockConc', 'dil-targetConc', 'dil-targetVol', 'dil-stockVol', 'dil-studentAnswer'];
