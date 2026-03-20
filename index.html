@@ -3890,49 +3890,43 @@ function updateElementsLab(dp, de) {
     canvas.querySelectorAll('.shell, .orbit').forEach(el => el.remove());
     
     config.forEach((max, i) => {
-        if (rem <= 0) return;
-        const inShell = Math.min(rem, max);
-        const radius = 35 + (i * 25); 
-        const diameter = radius * 2;
-          
-        // 1. Create the visual ring (The static line)
-        const s = document.createElement('div'); 
-        s.className = 'shell';
-        s.style.width = diameter + 'px'; 
-        s.style.height = diameter + 'px';
-        canvas.appendChild(s);
+    if (rem <= 0) return;
+    const inShell = Math.min(rem, max);
+    const radius = 35 + (i * 25); 
+    const diameter = radius * 2;
+      
+    // Create the visual ring
+    const s = document.createElement('div'); 
+    s.className = 'shell';
+    s.style.width = diameter + 'px'; 
+    s.style.height = diameter + 'px';
+    canvas.appendChild(s);
+    
+    for(let j = 0; j < inShell; j++) {
+        // Create the orbit container
+        const orb = document.createElement('div'); 
+        orb.className = 'orbit';
+        orb.style.width = diameter + 'px';
+        orb.style.height = diameter + 'px';
         
-        // 2. Loop through each electron in this shell
-        for(let j = 0; j < inShell; j++) {
-            // CRITICAL: Each electron gets its own 'orbit' div
-            const orb = document.createElement('div'); 
-            orb.className = 'orbit';
-            orb.style.width = diameter + 'px';
-            orb.style.height = diameter + 'px';
-            
-            // Calculate the starting position (e.g., if 2 electrons, 0 and 180)
-            const startAngle = j * (360 / inShell);
-            
-            // Apply the speed and the starting rotation
-            orb.style.setProperty('--speed', (6 + i * 2) + 's');
-            
-            // Set the initial rotation so they are spread out
-            orb.style.transform = `translate(-50%, -50%) rotate(${startAngle}deg)`;
+        // Distribute electrons by rotation degrees
+        const angle = j * (360 / inShell);
+        orb.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+        orb.style.setProperty('--speed', (6 + i * 2) + 's');
 
-            // 3. Create the electron dot
-            const e = document.createElement('div'); 
-            e.className = 'e-particle';
-            
-            // Position it at the top of its own orbit div
-            e.style.top = "-5px"; 
-            e.style.left = "50%";
-            e.style.transform = "translateX(-50%)";
+        // Create the electron dot
+        const e = document.createElement('div'); 
+        e.className = 'e-particle';
+        // Position it exactly on the top edge of the orbit div
+        e.style.top = "-5px"; 
+        e.style.left = "50%";
+        e.style.transform = "translateX(-50%)";
 
-            orb.appendChild(e);
-            canvas.appendChild(orb); // Add the individual orbit to the canvas
-        }
-        rem -= inShell;
-    });
+        orb.appendChild(e);
+        canvas.appendChild(orb);
+    }
+    rem -= inShell;
+});
 }
     
 
