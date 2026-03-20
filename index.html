@@ -3119,22 +3119,23 @@ function startLab(choice) {
 
 
 
-// --- GLOBAL STATE ---
-let dilutionAiTimer = null; // Unique name for Dilution module
+
+ // --- GLOBAL STATE ---
+let dilutionAiTimer = null; 
 let dilAttempts = 0;
 let currentCorrectAnswer = 0;
 let currentSolvingFor = "";
 
 /**
  * PUTER AI: INDEPENDENT ANALYSIS ENGINE
- * Optimized to prevent the "Error" message by handling the Puter object safely.
+ * Refactored to handle Async execution without timer-collision errors.
  */
 async function runPuterAIScan(statusUpdate = null) {
     const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
     const problemText = document.getElementById('dil-problem-sentence').innerText;
     const scratchpad = document.getElementById('dil-scratchpad');
     
-    // 1. IMMEDIATE UI FEEDBACK
+    // 1. IMMEDIATE UI FEEDBACK (Instant response)
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
     baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
@@ -3145,28 +3146,28 @@ async function runPuterAIScan(statusUpdate = null) {
         ? currentContent.split('------------------------------------------------').pop().trim() 
         : "// START CALCULATIONS...";
 
-    scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[WAITING FOR DATA UPLINK...]\n------------------------------------------------\n\n" + userNotes;
+    scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[ESTABLISHING DATA UPLINK...]\n------------------------------------------------\n\n" + userNotes;
 
-    // 2. STABILIZED AI CALL
+    // 2. STABILIZED ASYNC DEBOUNCE
     if (dilutionAiTimer) clearTimeout(dilutionAiTimer);
 
     dilutionAiTimer = setTimeout(async () => {
         try {
-            // Check if puter is available
-            if (typeof puter === 'undefined') {
-                throw new Error("Puter environment not detected.");
+            // Safety check for the Puter object
+            if (typeof puter === 'undefined' || !puter.ai) {
+                console.error("Puter AI not found");
+                return;
             }
 
-            const aiResponse = await puter.ai.chat(
-                `As a Lab Safety AI, analyze: ${compound}. 
-                Context: ${problemText}. 
-                List: 1. Hazard, 2. PPE, 3. Disposal. 
-                Max 25 words. Professional terminal tone.`
+            // The AI Call
+            const response = await puter.ai.chat(
+                `As a Lab Safety AI, analyze: ${compound}. Context: ${problemText}. ` +
+                `List: 1. Hazard, 2. PPE, 3. Disposal. Max 25 words. Terminal tone.`
             );
 
-            // 3. FINAL SUCCESS RENDER
+            // 3. SUCCESSFUL RENDER
             let finalOutput = baseDisplay;
-            finalOutput += `🔍 SCAN COMPLETE:\n${aiResponse.trim()}\n`;
+            finalOutput += `🔍 SCAN COMPLETE:\n${response.trim()}\n`;
             
             if (statusUpdate) {
                 finalOutput += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
@@ -3176,24 +3177,24 @@ async function runPuterAIScan(statusUpdate = null) {
             scratchpad.value = finalOutput + userNotes;
 
         } catch (err) {
-            console.warn("Puter AI Retry Logic Triggered:", err);
-            // Fallback for when the AI is busy or object is missing
+            // Error handling that doesn't just "fail"
+            console.error("AI Error:", err);
             scratchpad.value = baseDisplay + 
-                `⚠️ SCANNER DELAYED: System is recalibrating.\n` +
-                `[REAGENT: ${compound}]\n` +
-                `Please wait 2 seconds or click Generate again.\n` +
+                `⚠️ SCANNER INTERRUPTED\n[REAGENT: ${compound}]\n` +
+                `System busy. Please re-trigger scan by generating a new problem.\n` +
                 `------------------------------------------------\n\n` + userNotes;
         }
-    }, 1000); // 1-second delay is safer for API stability
+    }, 500); // 500ms is the sweet spot for responsiveness
 }
 
 /**
- * GENERATE PROBLEM
+ * GENERATE PROBLEM & TRIGGER SCAN
  */
 async function generateDilutionProblem() {
     resetDilutionLab();
     const data = generateDynamicScenario();
     
+    // Math Logic
     const M1 = (Math.random() * 4 + 1).toFixed(2);
     const V1 = (Math.random() * 50 + 5).toFixed(1);
     const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
@@ -3208,19 +3209,22 @@ async function generateDilutionProblem() {
         'mass': `${data.context} Find the **grams** of **${data.name}** (MM: ${mm}) for the initial ${V1}mL of ${M1}M stock.`
     };
 
+    // DOM Updates
     document.getElementById('dil-compound').value = data.name;
     document.getElementById('dil-molarMass').value = mm;
     document.getElementById('dil-problem-sentence').innerHTML = templates[type];
 
-    // Math Answers
+    // Correct Answer Assignment
     if(type === 'V1') currentCorrectAnswer = parseFloat(V1);
     else if(type === 'M2') currentCorrectAnswer = parseFloat(M2);
     else if(type === 'V2') currentCorrectAnswer = parseFloat(V2);
     else currentCorrectAnswer = (M1 * (V1 / 1000) * mm).toFixed(2);
 
-    await runPuterAIScan("LIVE SCAN IN PROGRESS...");
+    // CALL SCAN
+    await runPuterAIScan("REAGENT LOADED: Analyzing molecular stability...");
 }
 
+// --- HELPERS ---
 function generateDynamicScenario() {
     const metals = ["Sodium", "Potassium", "Copper(II)", "Zinc", "Iron(III)"];
     const anions = ["Hydroxide", "Sulfate", "Nitrate", "Chloride"];
@@ -3233,8 +3237,6 @@ function resetDilutionLab() {
     const ids = ['dil-compound', 'dil-molarMass', 'dil-studentAnswer', 'dil-scratchpad'];
     ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ""; });
 }
-
- 
     
     
  
