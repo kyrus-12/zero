@@ -3118,6 +3118,11 @@ function startLab(choice) {
 
 
 
+    function closeDilutionLab() {
+    const modal = document.getElementById('dilutionLabModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    }
 
 // --- GLOBAL STATE ---
 let dilutionAiTimer = null; 
@@ -3359,13 +3364,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     
 
- 
-    function closeDilutionLab() {
-    const modal = document.getElementById('dilutionLabModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    }
+
     
+
  
 
     // --- STATE MANAGEMENT ---
