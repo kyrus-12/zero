@@ -472,6 +472,51 @@ body.theme-nature {
     overflow: hidden;
 }
 
+    /* The visual rings */
+#atom-canvas .shell {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* The rotating container for electrons */
+#atom-canvas .orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* Width and Height will be set by JS to match the shell */
+    transform-origin: center;
+    pointer-events: none;
+    animation: el-orbit-rotation var(--speed) linear infinite;
+    z-index: 6;
+}
+
+/* The actual electron dot */
+#atom-canvas .e-particle {
+    position: absolute;
+    top: 0; 
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background: #fbff00;
+    border-radius: 50%;
+    /* Translate -50% centers the 10px dot on the 50% left mark */
+    /* TranslateY -5px centers the dot vertically on the thin shell line */
+    transform: translate(-50%, -5px); 
+    box-shadow: 0 0 10px #fbff00, 0 0 20px rgba(251, 255, 0, 0.5);
+}
+
+/* Scoped Animation to avoid conflicts */
+@keyframes el-orbit-rotation {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 .nucleus-static {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     width: 25px; height: 25px; background: #ff4d4d; border-radius: 50%;
