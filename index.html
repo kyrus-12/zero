@@ -487,23 +487,37 @@ body.theme-nature {
 }
 
 #atom-canvas .orbit {
-    /* The animation will now rotate the div around the nucleus */
-    animation: el-orbit-rotation var(--speed) linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    pointer-events: none;
+    /* Use the variable to set the initial position */
+    transform: translate(-50%, -50%) rotate(var(--start-angle, 0deg));
+    animation: el-orbit-rotation var(--speed, 3s) linear infinite;
+}
+
+@keyframes el-orbit-rotation {
+    from { 
+        transform: translate(-50%, -50%) rotate(var(--start-angle, 0deg)); 
+    }
+    to { 
+        transform: translate(-50%, -50%) rotate(calc(var(--start-angle, 0deg) + 360deg)); 
+    }
 }
 
 #atom-canvas .e-particle {
     position: absolute;
+    /* This places the electron exactly on the line of the shell */
+    top: -5px; 
+    left: 50%;
     width: 10px;
     height: 10px;
     background: #fbff00;
     border-radius: 50%;
+    transform: translateX(-50%);
     box-shadow: 0 0 10px #fbff00;
-}
-
-@keyframes el-orbit-rotation {
-    /* Use 'inherit' or just rotate from the current state */
-    from { transform: translate(-50%, -50%) rotate(var(--start-angle, 0deg)); }
-    to { transform: translate(-50%, -50%) rotate(calc(var(--start-angle, 0deg) + 360deg)); }
+    z-index: 20;
 }
 
     
@@ -3879,56 +3893,53 @@ function initElementsLab() {
 }
       
 
-function updateElementsLab(dp, de) {
+
+    function updateElementsLab(dp, de) {
     elPCount = Math.max(0, elPCount + dp); 
     elECount = Math.max(0, elECount + de);
     document.getElementById('pCountVal').innerText = elPCount;
     document.getElementById('eCountVal').innerText = elECount;
     
     const canvas = document.getElementById('atom-canvas');
-    // Clear only Bohr-related elements
+    // Clear previous elements
     canvas.querySelectorAll('.shell, .orbit').forEach(el => el.remove());
     
+    const config = [2, 8, 18, 32, 32, 18, 8];
+    let rem = elECount;
+
     config.forEach((max, i) => {
-    if (rem <= 0) return;
-    const inShell = Math.min(rem, max);
-    const radius = 35 + (i * 25); 
-    const diameter = radius * 2;
-      
-    // Create the visual ring
-    const s = document.createElement('div'); 
-    s.className = 'shell';
-    s.style.width = diameter + 'px'; 
-    s.style.height = diameter + 'px';
-    canvas.appendChild(s);
-    
-    for(let j = 0; j < inShell; j++) {
-        // Create the orbit container
-        const orb = document.createElement('div'); 
-        orb.className = 'orbit';
-        orb.style.width = diameter + 'px';
-        orb.style.height = diameter + 'px';
+        if (rem <= 0) return;
+        const inShell = Math.min(rem, max);
+        const radius = 35 + (i * 25); 
+        const diameter = radius * 2;
+          
+        // Create the Ring line
+        const s = document.createElement('div'); 
+        s.className = 'shell';
+        s.style.width = diameter + 'px'; 
+        s.style.height = diameter + 'px';
+        canvas.appendChild(s);
         
-        // Distribute electrons by rotation degrees
-        const angle = j * (360 / inShell);
-        orb.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
-        orb.style.setProperty('--speed', (6 + i * 2) + 's');
+        for(let j = 0; j < inShell; j++) {
+            const orb = document.createElement('div'); 
+            orb.className = 'orbit';
+            orb.style.width = diameter + 'px';
+            orb.style.height = diameter + 'px';
+            
+            // Calculate and set the starting angle variable
+            const angle = j * (360 / inShell);
+            orb.style.setProperty('--start-angle', `${angle}deg`);
+            orb.style.setProperty('--speed', (6 + i * 2) + 's');
 
-        // Create the electron dot
-        const e = document.createElement('div'); 
-        e.className = 'e-particle';
-        // Position it exactly on the top edge of the orbit div
-        e.style.top = "-5px"; 
-        e.style.left = "50%";
-        e.style.transform = "translateX(-50%)";
-
-        orb.appendChild(e);
-        canvas.appendChild(orb);
-    }
-    rem -= inShell;
-});
+            const e = document.createElement('div'); 
+            e.className = 'e-particle';
+            
+            orb.appendChild(e);
+            canvas.appendChild(orb);
+        }
+        rem -= inShell;
+    });
 }
-    
 
 
 function resetElementsGame() {
