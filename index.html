@@ -3136,64 +3136,75 @@ const dilGuides = {
 };
 
 
-    
+
 
 /**
  * PUTER AI: INDEPENDENT ANALYSIS ENGINE
- * Replaces static logic with a live generative call to analyze chemicals.
+ * Dynamically fetches safety data from the AI based on the generated problem.
  */
 async function runPuterAIScan(statusUpdate = null) {
     const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
     const problemText = document.getElementById('dil-problem-sentence').innerText;
     const scratchpad = document.getElementById('dil-scratchpad');
     
-    // 1. PREPARE THE TERMINAL HEADER
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // 1. UI FEEDBACK: Show the "Scanning" state immediately
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
     baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
     baseDisplay += `------------------------------------------------\n`;
 
-    // Immediate UI feedback while the AI "thinks"
-    const currentParts = scratchpad.value.split('------------------------------------------------');
-    const userNotes = currentParts.length > 1 ? currentParts[currentParts.length - 1].trim() : "// START CALCULATIONS...";
-    scratchpad.value = baseDisplay + "[SCANNING MOLECULAR STRUCTURE...]\n" + "------------------------------------------------\n\n" + userNotes;
+    // Preserve existing user notes if they exist
+    const currentContent = scratchpad.value;
+    const userNotes = currentContent.includes('------------------------------------------------') 
+        ? currentContent.split('------------------------------------------------').pop().trim() 
+        : "// START CALCULATIONS...";
 
-    // 2. INDEPENDENT AI CALL (Debounced to prevent spam)
+    // Set temporary "Processing" view
+    scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[ANALYZING REAGENT PROPERTIES...]\n------------------------------------------------\n\n" + userNotes;
+
+    // 2. DEBOUNCED AI CALL
     clearTimeout(aiDebounceTimer);
     aiDebounceTimer = setTimeout(async () => {
         try {
-            // The AI independently identifies Hazards, PPE, and Disposal based on the compound name
+            // The Puter AI independently evaluates the chemical safety
             const aiResponse = await puter.ai.chat(
-                `Acting as a Lab Safety AI, analyze the reagent: ${compound}. 
-                Context: ${problemText}. 
-                Briefly list: 1. Hazard, 2. Required PPE, 3. Disposal. 
-                Keep it under 30 words and use a professional terminal tone.`
+                `As a Lab Safety Officer, analyze: ${compound}. 
+                Scenario: ${problemText}. 
+                Provide 1. Specific Hazard, 2. Required PPE, 3. Disposal method. 
+                Tone: Technical, concise, max 30 words.`
             );
 
-            // 3. RENDER FINAL DYNAMIC LOG
-            let finalLog = baseDisplay;
-            finalLog += `🔍 ANALYSIS COMPLETE:\n${aiResponse}\n`;
+            // 3. FINAL RESPONSIVE UPDATE
+            let finalOutput = baseDisplay;
+            finalOutput += `🔍 SCAN COMPLETE:\n${aiResponse.trim()}\n`;
             
             if (statusUpdate) {
-                finalLog += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
+                finalOutput += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
             }
-            finalLog += `------------------------------------------------\n\n`;
+            finalOutput += `------------------------------------------------\n\n`;
             
-            scratchpad.value = finalLog + userNotes;
+            scratchpad.value = finalOutput + userNotes;
+            
+            // Auto-scroll scratchpad to top to show the scan results
+            scratchpad.scrollTop = 0;
+
         } catch (err) {
-            scratchpad.value = baseDisplay + `⚠️ SCANNER ERROR: Connection to AI Uplink lost.\n------------------------------------------------\n\n` + userNotes;
+            console.error("AI Scan Error:", err);
+            scratchpad.value = baseDisplay + `⚠️ ERROR: Could not establish AI uplink.\n------------------------------------------------\n\n` + userNotes;
         }
-    }, 600); // 600ms debounce
+    }, 600); 
 }
 
 /**
- * UPDATED GENERATION
- * Now calls the Async scan after generating the problem.
+ * GENERATE PROBLEM & TRIGGER SCAN
+ * This is the primary entry point.
  */
 async function generateDilutionProblem() {
+    // 1. Reset and Generate Data
     resetDilutionLab();
     const data = generateDynamicScenario();
     
+    // 2. Math & Logic
     const M1 = (Math.random() * 4 + 1).toFixed(2);
     const V1 = (Math.random() * 50 + 5).toFixed(1);
     const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
@@ -3203,24 +3214,27 @@ async function generateDilutionProblem() {
     const type = ['V1', 'M2', 'V2', 'mass'][Math.floor(Math.random() * 4)];
     const templates = {
         'V1': `${data.context} Determine **V1** of **${data.name}** for ${V2}mL at ${M2}M from ${M1}M.`,
-        'M2': `${data.context} If ${V1}mL of ${M1}M **${data.name}** is diluted to ${V2}mL, solve for **M2**.`,
+        'M2': `${data.context} If ${V1}mL of ${M1}M **${data.name}** is diluted to ${V2}mL, find **M2**.`,
         'V2': `${data.context} To what **V2** must you dilute ${V1}mL of ${M1}M **${data.name}** to reach ${M2}M?`,
         'mass': `${data.context} Find the **grams** of **${data.name}** (MM: ${mm}) for the initial ${V1}mL of ${M1}M stock.`
     };
 
+    // 3. Update DOM
     document.getElementById('dil-compound').value = data.name;
     document.getElementById('dil-molarMass').value = mm;
     document.getElementById('dil-problem-sentence').innerHTML = templates[type];
 
-    // Answer Logic
+    // 4. Store Correct Answer
     if(type === 'V1') currentCorrectAnswer = parseFloat(V1);
     else if(type === 'M2') currentCorrectAnswer = parseFloat(M2);
     else if(type === 'V2') currentCorrectAnswer = parseFloat(V2);
-    else currentCorrectAnswer = ((M1 * (V1 / 1000)) * mm).toFixed(2);
+    else currentCorrectAnswer = (M1 * (V1 / 1000) * mm).toFixed(2);
 
-    // Trigger the independent AI scan
-    await runPuterAIScan("REAGENT DETECTED: Analyzing chemical signatures...");
+    // 5. Trigger Responsive Scan
+    await runPuterAIScan("REAGENT DETECTED: Synchronizing safety protocols...");
 }
+
+    
     
 function updateDilGuide(field) {
     const guideBox = document.getElementById('guide-text');
