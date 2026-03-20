@@ -3120,8 +3120,9 @@ function startLab(choice) {
 
 
 
-            
-// --- GLOBAL STATE ---
+        // --- GLOBAL STATE (Unique Timers to prevent clashing) ---
+let dilutionAiTimer; // Unique to Dilution
+let solutionAiTimer; // Unique to Solution Prep (if in same file)
 let dilAttempts = 0;
 let currentCorrectAnswer = 0;
 let currentSolvingFor = "";
@@ -3140,7 +3141,6 @@ const dilGuides = {
 
 /**
  * PUTER AI: INDEPENDENT ANALYSIS ENGINE
- * Generates live safety data based on the chemical and problem context.
  */
 async function runPuterAIScan(statusUpdate = null) {
     const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
@@ -3153,7 +3153,6 @@ async function runPuterAIScan(statusUpdate = null) {
     baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
     baseDisplay += `------------------------------------------------\n`;
 
-    // Preserve existing user notes
     const currentContent = scratchpad.value;
     const userNotes = currentContent.includes('------------------------------------------------') 
         ? currentContent.split('------------------------------------------------').pop().trim() 
@@ -3161,16 +3160,16 @@ async function runPuterAIScan(statusUpdate = null) {
 
     scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[ANALYZING REAGENT PROPERTIES...]\n------------------------------------------------\n\n" + userNotes;
 
-    // 2. DEBOUNCED AI CALL
-    clearTimeout(aiDebounceTimer);
-    aiDebounceTimer = setTimeout(async () => {
+    // 2. USE UNIQUE TIMER: dilutionAiTimer
+    clearTimeout(dilutionAiTimer);
+    dilutionAiTimer = setTimeout(async () => {
         try {
-            // Independent AI evaluation using your provided logic
+            // Live AI Analysis
             const aiResponse = await puter.ai.chat(
-                `As a Lab Safety Officer, analyze the chemical: ${compound}. 
-                Context: ${problemText}. 
-                Briefly list: 1. Specific Hazard, 2. Required PPE, 3. Disposal method. 
-                Tone: Technical terminal, max 30 words.`
+                `Acting as a Lab Safety AI, analyze: ${compound}. 
+                Problem Context: ${problemText}. 
+                Identify: 1. Hazard, 2. PPE, 3. Disposal. 
+                Keep it under 30 words, professional terminal tone.`
             );
 
             // 3. RENDER RESPONSIVE UPDATE
@@ -3183,30 +3182,14 @@ async function runPuterAIScan(statusUpdate = null) {
             finalOutput += `------------------------------------------------\n\n`;
             
             scratchpad.value = finalOutput + userNotes;
-            scratchpad.scrollTop = 0; // Scroll to scan result
+            scratchpad.scrollTop = 0; 
 
         } catch (err) {
             console.error("AI Scan Error:", err);
-            scratchpad.value = baseDisplay + `⚠️ ERROR: Could not establish AI uplink.\n------------------------------------------------\n\n` + userNotes;
+            // This error usually happens if the Puter API is overwhelmed or the timer was cleared
+            scratchpad.value = baseDisplay + `⚠️ ERROR: AI Scan Interrupted. Please re-generate.\n------------------------------------------------\n\n` + userNotes;
         }
-    }, 600); 
-}
-
-/**
- * GENERATIVE SCENARIO ENGINE
- * Builds the context for the AI to analyze.
- */
-function generateDynamicScenario() {
-    const metals = ["Sodium", "Potassium", "Copper(II)", "Magnesium", "Calcium", "Iron(III)", "Zinc"];
-    const anions = ["Chloride", "Sulfate", "Nitrate", "Carbonate", "Hydroxide", "Oxide"];
-    const sectors = ["Medical Wing", "Industrial Plant", "Environmental Lab", "Research Sector 7"];
-    const tasks = ["Urgent Analysis", "Standard Protocol", "Contamination Check", "Synthesis Run"];
-
-    const name = `${metals[Math.floor(Math.random() * metals.length)]} ${anions[Math.floor(Math.random() * anions.length)]}`;
-    const mm = (Math.random() * 200 + 40).toFixed(2);
-    const context = `[${tasks[Math.floor(Math.random() * tasks.length)]} @ ${sectors[Math.floor(Math.random() * sectors.length)]}]`;
-
-    return { name, mm: parseFloat(mm), context };
+    }, 800); // Slightly longer delay for stability
 }
 
 /**
@@ -3216,7 +3199,6 @@ async function generateDilutionProblem() {
     resetDilutionLab();
     const data = generateDynamicScenario();
     
-    // Math Generation
     const M1 = (Math.random() * 4 + 1).toFixed(2);
     const V1 = (Math.random() * 50 + 5).toFixed(1);
     const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
@@ -3231,24 +3213,26 @@ async function generateDilutionProblem() {
         'mass': `${data.context} Find the **grams** of **${data.name}** (MM: ${mm}) for the initial ${V1}mL of ${M1}M stock.`
     };
 
-    // Update UI
     document.getElementById('dil-compound').value = data.name;
     document.getElementById('dil-molarMass').value = mm;
     document.getElementById('dil-problem-sentence').innerHTML = templates[type];
 
-    // Set Answer Logic
-    if(type === 'V1') { currentCorrectAnswer = parseFloat(V1); currentSolvingFor = "V1"; }
-    else if(type === 'M2') { currentCorrectAnswer = parseFloat(M2); currentSolvingFor = "M2"; }
-    else if(type === 'V2') { currentCorrectAnswer = parseFloat(V2); currentSolvingFor = "V2"; }
-    else { currentCorrectAnswer = (M1 * (V1 / 1000) * mm).toFixed(2); currentSolvingFor = "Mass"; }
+    if(type === 'V1') currentCorrectAnswer = parseFloat(V1);
+    else if(type === 'M2') currentCorrectAnswer = parseFloat(M2);
+    else if(type === 'V2') currentCorrectAnswer = parseFloat(V2);
+    else currentCorrectAnswer = (M1 * (V1 / 1000) * mm).toFixed(2);
 
-    // Start Independent AI Scan
+    // Call the independent scan
     await runPuterAIScan("REAGENT DETECTED: Synchronizing safety protocols...");
 }
 
-function updateDilGuide(field) {
-    const guideBox = document.getElementById('guide-text');
-    if (guideBox && dilGuides[field]) guideBox.innerHTML = dilGuides[field];
+// Helpers
+function generateDynamicScenario() {
+    const metals = ["Sodium", "Potassium", "Copper(II)", "Magnesium", "Calcium", "Iron(III)", "Zinc"];
+    const anions = ["Chloride", "Sulfate", "Nitrate", "Carbonate", "Hydroxide", "Oxide"];
+    const context = `[Analysis @ Sector ${Math.floor(Math.random() * 9)}]`;
+    const name = `${metals[Math.floor(Math.random() * metals.length)]} ${anions[Math.floor(Math.random() * anions.length)]}`;
+    return { name, mm: (Math.random() * 200 + 40).toFixed(2), context };
 }
 
 function resetDilutionLab() {
@@ -3257,10 +3241,8 @@ function resetDilutionLab() {
         const el = document.getElementById(id);
         if(el) el.value = "";
     });
-    const verifyBtn = document.getElementById("dil-verifyBtn");
-    if(verifyBtn) verifyBtn.disabled = false;
-}
-
+}    
+ 
     
     
  
@@ -3313,7 +3295,7 @@ function showDefinition(type) {
 }
 
 
-let aiDebounceTimer; 
+
 
 async function renderStoryAndData() {
     // --- 1. CAPTURE DATA (Exact values) ---
