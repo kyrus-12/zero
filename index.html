@@ -6,7 +6,8 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>AIGHAM 7 - New</title>
 <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://puter.com/puter.js/v2/"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    
     
 <style>
     :root{
@@ -3127,112 +3128,58 @@ function startLab(choice) {
 
 
 
-    // --- GLOBAL STATE ---
+// --- GLOBAL STATE ---
 let dilutionAiTimer = null; 
 let dilAttempts = 0;
 let currentCorrectAnswer = 0;
 let currentSolvingFor = "";
 let isPuterAvailable = false;
 
-/**
- * PUTER AI: INDEPENDENT ANALYSIS ENGINE
- * Refactored to handle Async execution without timer-collision errors.
- * Enhanced with availability checking and error recovery.
- */
+
 async function runPuterAIScan(statusUpdate = null) {
     const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
     const problemText = document.getElementById('dil-problem-sentence').innerText;
     const scratchpad = document.getElementById('dil-scratchpad');
     
-    // Check if element exists
-    if (!scratchpad) {
-        console.error("Scratchpad element not found");
+    if (!scratchpad) return;
+
+    // 1. Setup UI
+    const timestamp = new Date().toLocaleTimeString();
+    let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\nTARGET: ${compound.toUpperCase()}\n------------------------------------------------\n`;
+    
+    // Save user notes
+    const userNotes = scratchpad.value.split('------------------------------------------------').pop().trim();
+    scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n------------------------------------------------\n\n" + userNotes;
+
+    // 2. Availability Check
+    if (typeof puter === 'undefined' || !puter.ai) {
+        scratchpad.value = baseDisplay + "⚠️ PUTER OFFLINE: Load via Puter.com\n------------------------------------------------\n\n" + userNotes;
         return;
     }
 
-    // 1. IMMEDIATE UI FEEDBACK (Instant response)
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
-    baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
-    baseDisplay += `------------------------------------------------\n`;
+    // 3. The AI Call
+    try {
+        const prompt = `As a Lab Safety AI, analyze: ${compound}. Context: ${problemText}. Provide: 1. Hazard, 2. PPE, 3. Disposal. Max 30 words. Technical tone.`;
 
-    const currentContent = scratchpad.value || "";
-    const userNotes = currentContent.includes('------------------------------------------------') 
-        ? currentContent.split('------------------------------------------------').pop().trim() 
-        : "// START CALCULATIONS...";
+        // Puter AI returns an object; we want the text content
+        const response = await puter.ai.chat(prompt);
+        
+        // Handle different response structures (Puter v2 returns a string or message object)
+        const aiText = typeof response === 'string' ? response : response.message.content;
 
-    scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[ESTABLISHING DATA UPLINK...]\n------------------------------------------------\n\n" + userNotes;
+        let finalOutput = baseDisplay;
+        finalOutput += `🔍 SCAN COMPLETE:\n${aiText}\n`;
+        if (statusUpdate) finalOutput += `\n📡 SYSTEM: ${statusUpdate}\n`;
+        finalOutput += `------------------------------------------------\n\n`;
+        
+        scratchpad.value = finalOutput + userNotes;
 
-    // 2. CHECK PUTER AVAILABILITY
-    if (typeof puter === 'undefined' || !puter.ai || !puter.ai.chat) {
-        console.warn("Puter AI not available - running in fallback mode");
-        scratchpad.value = baseDisplay + 
-            `⚠️ PUTER AI OFFLINE\n[REAGENT: ${compound}]\n` +
-            `Local analysis mode active. AI features require Puter environment.\n` +
-            `------------------------------------------------\n\n` + userNotes;
-        return;
+    } catch (err) {
+        console.error("Scan Failed:", err);
+        scratchpad.value = baseDisplay + `⚠️ SCAN ERROR: ${err.message}\n------------------------------------------------\n\n` + userNotes;
     }
-
-    isPuterAvailable = true;
-
-    // 3. STABILIZED ASYNC DEBOUNCE
-    if (dilutionAiTimer) clearTimeout(dilutionAiTimer);
-
-    dilutionAiTimer = setTimeout(async () => {
-        try {
-            // Construct the AI prompt
-            const prompt = `As a Lab Safety AI, analyze chemical compound: ${compound}. 
-Context: ${problemText}. 
-Provide exactly: 1. Primary Hazard, 2. Required PPE, 3. Disposal Code. 
-Format as bullet points. Max 30 words. Use technical/terminal tone.`;
-
-            // The AI Call with timeout protection
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-            const response = await Promise.race([
-                puter.ai.chat(prompt, { signal: controller.signal }),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error("AI Response Timeout")), 10000)
-                )
-            ]);
-            
-            clearTimeout(timeoutId);
-
-            // 4. SUCCESSFUL RENDER
-            let finalOutput = baseDisplay;
-            // FIXED: Extract content from ChatResponse object - single line change
-            finalOutput += `🔍 SCAN COMPLETE:\n${(response?.message?.content || response || "No response").toString().trim()}\n`;
-            
-            if (statusUpdate) {
-                finalOutput += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
-            }
-            finalOutput += `------------------------------------------------\n\n`;
-            
-            scratchpad.value = finalOutput + userNotes;
-
-        } catch (err) {
-            // Comprehensive error handling
-            console.error("Puter AI Error:", err);
-            
-            let errorMsg = "System busy";
-            if (err.name === 'AbortError' || err.message?.includes('Timeout')) {
-                errorMsg = "Connection timeout - uplink unstable";
-            } else if (err.message?.includes('authentication') || err.message?.includes('auth')) {
-                errorMsg = "Authentication required - check Puter session";
-            } else if (err.message?.includes('rate') || err.message?.includes('limit')) {
-                errorMsg = "Rate limit exceeded - retry shortly";
-            }
-
-            scratchpad.value = baseDisplay + 
-                `⚠️ SCANNER INTERRUPTED\n[REAGENT: ${compound}]\n` +
-                `Error: ${errorMsg}\n` +
-                `Retry: Generate new problem to re-trigger scan.\n` +
-                `------------------------------------------------\n\n` + userNotes;
-        }
-    }, 500); // 500ms debounce
 }
-
+    
 /**
  * GENERATE PROBLEM & TRIGGER SCAN
  */
@@ -3356,7 +3303,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn("Puter AI not detected - ensure running on puter.com");
     }
 })
-
 
     
 
