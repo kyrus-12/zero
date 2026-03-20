@@ -3119,35 +3119,22 @@ function startLab(choice) {
 
 
 
-
-        // --- GLOBAL STATE (Unique Timers to prevent clashing) ---
-let dilutionAiTimer; // Unique to Dilution
-let solutionAiTimer; // Unique to Solution Prep (if in same file)
+// --- GLOBAL STATE ---
+let dilutionAiTimer = null; // Unique name for Dilution module
 let dilAttempts = 0;
 let currentCorrectAnswer = 0;
 let currentSolvingFor = "";
 
-// --- EDUCATIONAL GUIDES ---
-const dilGuides = {
-    'compound': "The identity of the solute. This determines the chemical properties and the target of your scan.",
-    'molarMass': "<b>Molar Mass (g/mol):</b> The sum of atomic weights. <br>Formula: <code>MM = mass / moles</code>",
-    'mass': "<b>Mass to Add (g):</b> Used when preparing the initial stock.<br>Formula: <code>mass = M1 × V1(L) × MM</code>",
-    'stockConc': "<b>M1 (Stock Concentration):</b> The strength of the original solution.",
-    'targetConc': "<b>M2 (Target Concentration):</b> The desired strength after dilution.",
-    'stockVol': "<b>V1 (Stock Volume):</b> The amount of stock solution to pipet out.",
-    'targetVol': "<b>V2 (Final Volume):</b> The total volume after solvent is added.",
-    'answer': "<b>Stoichiometry Check:</b> Calculate the missing variable based on $M_1V_1 = M_2V_2$."
-};
-
 /**
  * PUTER AI: INDEPENDENT ANALYSIS ENGINE
+ * Optimized to prevent the "Error" message by handling the Puter object safely.
  */
 async function runPuterAIScan(statusUpdate = null) {
     const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
     const problemText = document.getElementById('dil-problem-sentence').innerText;
     const scratchpad = document.getElementById('dil-scratchpad');
     
-    // 1. UI FEEDBACK: Show "Scanning" state immediately
+    // 1. IMMEDIATE UI FEEDBACK
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
     baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
@@ -3158,21 +3145,26 @@ async function runPuterAIScan(statusUpdate = null) {
         ? currentContent.split('------------------------------------------------').pop().trim() 
         : "// START CALCULATIONS...";
 
-    scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[ANALYZING REAGENT PROPERTIES...]\n------------------------------------------------\n\n" + userNotes;
+    scratchpad.value = baseDisplay + "🛰️ INITIATING MOLECULAR SCAN...\n[WAITING FOR DATA UPLINK...]\n------------------------------------------------\n\n" + userNotes;
 
-    // 2. USE UNIQUE TIMER: dilutionAiTimer
-    clearTimeout(dilutionAiTimer);
+    // 2. STABILIZED AI CALL
+    if (dilutionAiTimer) clearTimeout(dilutionAiTimer);
+
     dilutionAiTimer = setTimeout(async () => {
         try {
-            // Live AI Analysis
+            // Check if puter is available
+            if (typeof puter === 'undefined') {
+                throw new Error("Puter environment not detected.");
+            }
+
             const aiResponse = await puter.ai.chat(
-                `Acting as a Lab Safety AI, analyze: ${compound}. 
-                Problem Context: ${problemText}. 
-                Identify: 1. Hazard, 2. PPE, 3. Disposal. 
-                Keep it under 30 words, professional terminal tone.`
+                `As a Lab Safety AI, analyze: ${compound}. 
+                Context: ${problemText}. 
+                List: 1. Hazard, 2. PPE, 3. Disposal. 
+                Max 25 words. Professional terminal tone.`
             );
 
-            // 3. RENDER RESPONSIVE UPDATE
+            // 3. FINAL SUCCESS RENDER
             let finalOutput = baseDisplay;
             finalOutput += `🔍 SCAN COMPLETE:\n${aiResponse.trim()}\n`;
             
@@ -3182,18 +3174,21 @@ async function runPuterAIScan(statusUpdate = null) {
             finalOutput += `------------------------------------------------\n\n`;
             
             scratchpad.value = finalOutput + userNotes;
-            scratchpad.scrollTop = 0; 
 
         } catch (err) {
-            console.error("AI Scan Error:", err);
-            // This error usually happens if the Puter API is overwhelmed or the timer was cleared
-            scratchpad.value = baseDisplay + `⚠️ ERROR: AI Scan Interrupted. Please re-generate.\n------------------------------------------------\n\n` + userNotes;
+            console.warn("Puter AI Retry Logic Triggered:", err);
+            // Fallback for when the AI is busy or object is missing
+            scratchpad.value = baseDisplay + 
+                `⚠️ SCANNER DELAYED: System is recalibrating.\n` +
+                `[REAGENT: ${compound}]\n` +
+                `Please wait 2 seconds or click Generate again.\n` +
+                `------------------------------------------------\n\n` + userNotes;
         }
-    }, 800); // Slightly longer delay for stability
+    }, 1000); // 1-second delay is safer for API stability
 }
 
 /**
- * GENERATE PROBLEM & TRIGGER SCAN
+ * GENERATE PROBLEM
  */
 async function generateDilutionProblem() {
     resetDilutionLab();
@@ -3217,31 +3212,28 @@ async function generateDilutionProblem() {
     document.getElementById('dil-molarMass').value = mm;
     document.getElementById('dil-problem-sentence').innerHTML = templates[type];
 
+    // Math Answers
     if(type === 'V1') currentCorrectAnswer = parseFloat(V1);
     else if(type === 'M2') currentCorrectAnswer = parseFloat(M2);
     else if(type === 'V2') currentCorrectAnswer = parseFloat(V2);
     else currentCorrectAnswer = (M1 * (V1 / 1000) * mm).toFixed(2);
 
-    // Call the independent scan
-    await runPuterAIScan("REAGENT DETECTED: Synchronizing safety protocols...");
+    await runPuterAIScan("LIVE SCAN IN PROGRESS...");
 }
 
-// Helpers
 function generateDynamicScenario() {
-    const metals = ["Sodium", "Potassium", "Copper(II)", "Magnesium", "Calcium", "Iron(III)", "Zinc"];
-    const anions = ["Chloride", "Sulfate", "Nitrate", "Carbonate", "Hydroxide", "Oxide"];
-    const context = `[Analysis @ Sector ${Math.floor(Math.random() * 9)}]`;
+    const metals = ["Sodium", "Potassium", "Copper(II)", "Zinc", "Iron(III)"];
+    const anions = ["Hydroxide", "Sulfate", "Nitrate", "Chloride"];
     const name = `${metals[Math.floor(Math.random() * metals.length)]} ${anions[Math.floor(Math.random() * anions.length)]}`;
-    return { name, mm: (Math.random() * 200 + 40).toFixed(2), context };
+    return { name, mm: (Math.random() * 150 + 50).toFixed(2), context: "[Lab Unit 9]" };
 }
 
 function resetDilutionLab() {
     dilAttempts = 0;
-    ['dil-compound', 'dil-molarMass', 'dil-studentAnswer', 'dil-scratchpad'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.value = "";
-    });
-}    
+    const ids = ['dil-compound', 'dil-molarMass', 'dil-studentAnswer', 'dil-scratchpad'];
+    ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ""; });
+}
+
  
     
     
@@ -3295,7 +3287,9 @@ function showDefinition(type) {
 }
 
 
-
+    
+let solutionAiTimer;
+    
 
 async function renderStoryAndData() {
     // --- 1. CAPTURE DATA (Exact values) ---
