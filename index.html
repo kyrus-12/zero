@@ -3900,23 +3900,21 @@ let molSequence = [];
 let currentAiSolution = ""; 
 let molAiTimer = null;
 
-/**
- * PUTER AI: MOLECULAR GENERATOR
- */
-async function generateAiMolecule(isRetry = false) {
+
+    async function generateAiMolecule(isRetry = false) {
     const status = document.getElementById('mol-status');
     const workbench = document.getElementById('mol-workbench');
     const taskName = document.getElementById('mol-task-name');
     
     // UI Feedback
     status.style.color = "#60a5fa";
-    status.innerText = isRetry ? "🔄 STABILITY FAILED: REGENERATING NEW TARGET..." : "📡 UPLINKING TO CHEMICAL DATABASE...";
+    status.innerText = isRetry ? "🔄 STABILITY FAILED: REGENERATING..." : "📡 UPLINKING TO CHEMICAL DATABASE...";
     workbench.innerHTML = '<span class="animate-pulse text-blue-400">Synthesizing atomic structure...</span>';
 
     try {
         if (typeof puter === 'undefined') throw new Error("Puter Offline");
 
-        // Requesting unique molecule based on current level
+        // The AI Call
         const response = await puter.ai.chat(
             `Generate a unique molecule for a chemistry game. 
             Level Complexity: ${molCurrentLvl}. 
@@ -3927,9 +3925,15 @@ async function generateAiMolecule(isRetry = false) {
             Example: {"name": "Acetylene", "hint": "Two carbons triple bonded", "solution": "H-C≡C-H"}`
         );
 
-        const cleanJson = response.text.replace(/```json|```/g, "").trim();
+        // FIX 1: Use toString() to get the actual text from the Puter object
+        const rawContent = response.toString();
+
+        // FIX 2: Better RegEx to remove Markdown JSON blocks
+        const cleanJson = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+        
         const data = JSON.parse(cleanJson);
         
+        // DOM Updates
         taskName.innerText = data.name;
         document.getElementById('mol-task-hint').innerText = data.hint;
         document.getElementById('mol-level').innerText = `Simulation: ${molCurrentLvl}`;
@@ -3943,11 +3947,16 @@ async function generateAiMolecule(isRetry = false) {
     } catch (err) {
         console.error("Synthesis Error:", err);
         status.style.color = "#f87171";
-        status.innerText = "⚠️ DATABASE ERROR: Emergency Protocol active.";
+        status.innerText = "⚠️ DATABASE ERROR: Loading Water as fallback.";
+        
+        // Fallback safety
         taskName.innerText = "Water (H2O)";
+        document.getElementById('mol-task-hint').innerText = "Two hydrogens, one oxygen";
         currentAiSolution = "H-O-H";
+        resetMolWork();
     }
 }
+    
 
 /**
  * AUTOMATED VALIDATION LOGIC
