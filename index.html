@@ -3122,130 +3122,151 @@ function startLab(choice) {
 let currentCorrectAnswer = 0;
 let currentSolvingFor = "";
 
-// Database with "Class" types for AI Logic
-const compounds = [
-    { name: "NaCl", mm: 58.44, type: "Salt" },
-    { name: "NaOH", mm: 40.00, type: "Base" },
-    { name: "KMnO4", mm: 158.03, type: "Oxidizer" },
-    { name: "CuSO4", mm: 159.61, type: "Metal" }
-];
+// Educational guides preserved as requested
+const dilGuides = {
+    'compound': "The identity of the solute. This determines the chemical properties and the target of your scan.",
+    'molarMass': "<b>Molar Mass (g/mol):</b> The sum of atomic weights. <br>Formula: <code class='text-purple-400'>MM = mass / moles</code>",
+    'mass': "<b>Mass to Add (g):</b> Used when preparing the initial stock.<br>Formula: <code class='text-purple-400'>mass = M1 × V1(L) × MM</code>",
+    'stockConc': "<b>M1 (Stock Concentration):</b> The strength of the original solution.<br>Formula: <code class='text-purple-400'>M1 = (M2 × V2) / V1</code>",
+    'targetConc': "<b>M2 (Target Concentration):</b> The desired strength after dilution.<br>Formula: <code class='text-purple-400'>M2 = (M1 × V1) / V2</code>",
+    'stockVol': "<b>V1 (Stock Volume):</b> The amount of stock solution to pipet out.<br>Formula: <code class='text-purple-400'>V1 = (M2 × V2) / M1</code>",
+    'targetVol': "<b>V2 (Final Volume):</b> The total volume after solvent is added.<br>Formula: <code class='text-purple-400'>V2 = (M1 × V1) / M2</code>",
+    'answer': "<b>Stoichiometry Check:</b> Calculate the missing variable based on the $M_1V_1 = M_2V_2$ balance or the Mass/Mole relationship."
+};
 
 /**
- * PUTER AI: CORE SCANNER & SAFETY ENGINE
- * Generates dynamic safety based on chemical properties for Grade 7 level.
+ * PUTER AI PROCEDURAL GENERATOR
+ * Generates unique chemicals and scenarios without constant arrays.
  */
-function runPuterAIScan(statusMessage = null) {
-    const compoundName = document.getElementById('dil-compound').value;
-    const scratchpad = document.getElementById('dil-scratchpad');
-    const compData = compounds.find(c => c.name === compoundName);
-    
-    let safetyProtocols = [];
-    
-    // AI Reasoning: Generating Safety Protocols based on Chemical Class
-    if (compData) {
-        if (compData.type === "Base") {
-            safetyProtocols.push("⚠️ CAUSTIC: Can irritate skin. Wear gloves and wash hands immediately if touched.");
-        } else if (compData.type === "Oxidizer") {
-            safetyProtocols.push("⚠️ REACTIVE: Keep away from paper or wood. Use only glass equipment.");
-        } else if (compData.type === "Metal") {
-            safetyProtocols.push("⚠️ TOXIC: Do not pour down the sink. Use the blue 'Heavy Metal' waste bin.");
-        } else {
-            safetyProtocols.push("✅ STABLE: General lab safety (goggles and coat) is sufficient.");
-        }
-    }
+function generateDynamicScenario() {
+    const metals = ["Sodium", "Potassium", "Copper(II)", "Magnesium", "Calcium", "Iron(III)", "Zinc"];
+    const anions = ["Chloride", "Sulfate", "Nitrate", "Carbonate", "Hydroxide", "Oxide"];
+    const sectors = ["Medical Wing", "Industrial Plant", "Environmental Lab", "Research Sector 7"];
+    const tasks = ["Urgent Analysis", "Standard Protocol", "Contamination Check", "Synthesis Run"];
 
-    const timestamp = new Date().toLocaleTimeString();
-    let aiDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
-    aiDisplay += `SPECIMEN: ${compoundName || "None Detected"}\n`;
-    aiDisplay += `------------------------------------------------\n`;
-    
-    // Output the generated safety
-    aiDisplay += `🛡️ SAFETY PROTOCOLS:\n${safetyProtocols.join('\n')}\n`;
+    const compoundName = `${metals[Math.floor(Math.random() * metals.length)]} ${anions[Math.floor(Math.random() * anions.length)]}`;
+    const molarMass = (Math.random() * 200 + 40).toFixed(2);
+    const context = `[${tasks[Math.floor(Math.random() * tasks.length)]} @ ${sectors[Math.floor(Math.random() * sectors.length)]}]`;
 
-    // Output the System Feedback (Verification or Advisory)
-    if (statusMessage) {
-        aiDisplay += `\n📡 AI MESSAGE: ${statusMessage}\n`;
-    }
-
-    aiDisplay += `------------------------------------------------\n\n`;
-
-    // Update Scratchpad while keeping user notes below the line
-    const parts = scratchpad.value.split('------------------------------------------------');
-    const userNotes = parts.length > 1 ? parts[parts.length - 1].trim() : "";
-    scratchpad.value = aiDisplay + userNotes;
+    return { name: compoundName, mm: parseFloat(molarMass), context: context };
 }
 
 /**
- * PUTER AI: PROBLEM GENERATOR
- * Creates math problems and scenarios dynamically without scripts.
+ * PUTER AI SCANNER ENGINE
+ * Analyzes the generated problem for hazards and safety.
  */
+function runPuterAIScan(statusUpdate = null) {
+    const compound = document.getElementById('dil-compound').value.trim();
+    const scratchpad = document.getElementById('dil-scratchpad');
+    
+    let hazards = [];
+    let ppe = "Standard Lab Coat, Nitrile Gloves, Safety Goggles.";
+    let disposal = "General chemical waste stream.";
+
+    // Logical Analysis based on name string
+    const lowerName = compound.toLowerCase();
+    if (lowerName.includes("hydroxide")) {
+        hazards.push("CAUSTIC: High risk of chemical burns. Skin/Eye irritant.");
+        ppe = "Face shield, Chemical apron, double-layered Nitrile gloves.";
+        disposal = "Neutralize to pH 7 before disposal in aqueous waste.";
+    } 
+    if (lowerName.includes("nitrate") || lowerName.includes("oxide")) {
+        hazards.push("OXIDIZER: May intensify fire; keep away from organics/flammables.");
+        ppe = "Flame-resistant lab coat, Safety Goggles.";
+        disposal = "Collect in dedicated Oxidizer waste container.";
+    }
+    if (lowerName.includes("copper") || lowerName.includes("iron")) {
+        hazards.push("ECO-TOXIC: Environmental hazard. Avoid drain disposal.");
+        disposal = "Heavy Metal Waste stream only. Do not flush.";
+    }
+
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    let aiHeader = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
+    aiHeader += `TARGET SPECIMEN: ${compound || "Unknown"}\n`;
+    aiHeader += `------------------------------------------------\n`;
+    
+    if (hazards.length > 0) {
+        aiHeader += `⚠️ HAZARDS: ${hazards.join(' | ')}\n`;
+    } else {
+        aiHeader += `✅ ENVIRONMENT: Nominal. Standard precautions apply.\n`;
+    }
+    
+    aiHeader += `🛡️ REQUIRED PPE: ${ppe}\n`;
+    aiHeader += `♻️ DISPOSAL: ${disposal}\n`;
+
+    if (statusUpdate) {
+        aiHeader += `\n📡 SYSTEM MESSAGE:\n${statusUpdate}\n`;
+    }
+
+    aiHeader += `------------------------------------------------\n\n`;
+
+    // Preserves student notes
+    const parts = scratchpad.value.split('------------------------------------------------');
+    const userNotes = parts.length > 1 ? parts[parts.length - 1].trim() : "// START CALCULATIONS HERE";
+    
+    scratchpad.value = aiHeader + userNotes;
+}
+
 function generateDilutionProblem() {
     resetDilutionLab();
     
-    const comp = compounds[Math.floor(Math.random() * compounds.length)];
+    const data = generateDynamicScenario();
     const types = ['V1', 'M2', 'V2', 'mass'];
     const type = types[Math.floor(Math.random() * types.length)];
 
-    // Randomize Math Values
-    const M1 = (Math.random() * 3 + 1).toFixed(2); // 1.00 - 4.00 M
-    const V1 = (Math.random() * 40 + 10).toFixed(1); // 10 - 50 mL
-    const V2 = (parseFloat(V1) + (Math.random() * 150 + 50)).toFixed(1);
+    // Generative Variables
+    const M1 = (Math.random() * 4 + 1).toFixed(2);
+    const V1 = (Math.random() * 50 + 5).toFixed(1);
+    const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
     const M2 = ((M1 * V1) / V2).toFixed(3);
-    const mass = (M1 * (V1 / 1000) * comp.mm).toFixed(2);
+    const mass = (M1 * (V1 / 1000) * data.mm).toFixed(2);
 
-    // AI Dynamic Sentence Construction
-    let scenarioText = `<b>SYSTEM SCAN:</b> Preparing <b>${comp.name}</b> (Molar Mass: ${comp.mm}). `;
+    const templates = {
+        'V1': `${data.context} Determine the **volume of stock (V1)** of **${data.name}** required to yield ${V2}mL at ${M2}M from a ${M1}M source.`,
+        'M2': `${data.context} If ${V1}mL of ${M1}M **${data.name}** is diluted to a total of ${V2}mL, find the **new Molarity (M2)**.`,
+        'V2': `${data.context} To what **final volume (V2)** must you dilute ${V1}mL of ${M1}M **${data.name}** to reach a concentration of ${M2}M?`,
+        'mass': `${data.context} How many **grams** of **${data.name}** (MM: ${data.mm}) are needed to prepare the initial ${V1}mL of ${M1}M stock?`
+    };
 
+    document.getElementById('dil-compound').value = data.name;
+    document.getElementById('dil-molarMass').value = data.mm;
+    document.getElementById('dil-problem-sentence').innerHTML = templates[type];
+
+    // Logic Assignment
     if(type === 'V1') {
-        scenarioText += `AI requires the <b>starting volume (V1)</b> to create ${V2}mL of a ${M2}M solution using a ${M1}M stock.`;
         currentCorrectAnswer = parseFloat(V1);
-        currentSolvingFor = "Stock Volume (V1)";
+        currentSolvingFor = "V1 Volume";
     } else if(type === 'M2') {
-        scenarioText += `If you take ${V1}mL of ${M1}M solution and add water until it reaches ${V2}mL, what is the <b>new Molarity (M2)</b>?`;
         currentCorrectAnswer = parseFloat(M2);
-        currentSolvingFor = "Target Molarity (M2)";
+        currentSolvingFor = "M2 Concentration";
     } else if(type === 'V2') {
-        scenarioText += `To what <b>final volume (V2)</b> must you dilute ${V1}mL of ${M1}M to result in a ${M2}M concentration?`;
         currentCorrectAnswer = parseFloat(V2);
-        currentSolvingFor = "Final Volume (V2)";
+        currentSolvingFor = "V2 Volume";
     } else {
-        scenarioText += `How many <b>grams (mass)</b> are needed to mix the original ${V1}mL of ${M1}M stock solution?`;
         currentCorrectAnswer = parseFloat(mass);
-        currentSolvingFor = "Mass to weigh";
+        currentSolvingFor = "Grams Needed";
     }
 
-    // Update UI
-    document.getElementById('dil-compound').value = comp.name;
-    document.getElementById('dil-molarMass').value = comp.mm;
-    document.getElementById('dil-problem-sentence').innerHTML = scenarioText;
-
-    // Run AI analysis
-    runPuterAIScan("Problem generated. Scanning glassware requirements...");
+    runPuterAIScan("SCAN COMPLETE: Data synchronized to terminal.");
 }
 
-/**
- * PUTER AI: VERIFIER
- */
 function checkDilutionAnswer() {
-    const studentInput = document.getElementById("dil-studentAnswer").value;
-    const studentValue = parseFloat(studentInput);
+    const studentValue = document.getElementById("dil-studentAnswer").value;
+    const student = parseFloat(studentValue);
     
-    if(isNaN(studentValue)) {
-        runPuterAIScan("❌ ERROR: Digital input must be a number.");
-        return;
-    }
+    if(isNaN(student)) return alert("CRITICAL: Input detected as Non-Numerical.");
 
     dilAttempts++;
-    const isCorrect = Math.abs(studentValue - currentCorrectAnswer) < (currentCorrectAnswer * 0.03); // 3% tolerance for G7
+    const isCorrect = Math.abs(student - currentCorrectAnswer) < (currentCorrectAnswer * 0.02);
 
     if(isCorrect) {
-        runPuterAIScan(`✅ VERIFIED: Calculation accepted. ${currentSolvingFor} is ${studentValue}. Protocol complete.`);
+        runPuterAIScan(`⚡ VERIFIED: Precision within limits. ${currentSolvingFor} confirmed.`);
         document.getElementById("dil-verifyBtn").disabled = true;
     } else {
         if(dilAttempts < 3) {
-            runPuterAIScan(`⚠️ DISCREPANCY: Scan mismatch (${dilAttempts}/3). Check your math and try again.`);
+            runPuterAIScan(`⚠️ MISMATCH: Discrepancy detected (${dilAttempts}/3). Re-calculate.`);
         } else {
-            runPuterAIScan(`❌ LOCKOUT: Failed verification. Correct answer: ${currentCorrectAnswer}. Reset system.`);
+            runPuterAIScan(`❌ LOCKOUT: Multiple discrepancies. Correct value: ${currentCorrectAnswer}.`);
             document.getElementById("dil-verifyBtn").disabled = true;
         }
     }
@@ -3253,17 +3274,14 @@ function checkDilutionAnswer() {
 
 function resetDilutionLab() {
     dilAttempts = 0;
-    const ids = ['dil-compound', 'dil-molarMass', 'dil-mass', 'dil-stockConc', 'dil-targetConc', 'dil-targetVol', 'dil-stockVol', 'dil-studentAnswer', 'dil-scratchpad'];
+    const ids = ['dil-compound', 'dil-molarMass', 'dil-studentAnswer', 'dil-scratchpad'];
     ids.forEach(id => { 
         const el = document.getElementById(id);
         if(el) el.value = ""; 
     });
     document.getElementById("dil-verifyBtn").disabled = false;
 }
-
-// Set up the listener for manual compound changes
-document.getElementById('dil-compound').addEventListener('change', () => runPuterAIScan("Manual compound entry detected. Re-scanning..."));
-
+    
     
  
 
