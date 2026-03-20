@@ -472,51 +472,41 @@ body.theme-nature {
     overflow: hidden;
 }
 
-    /* The visual rings */
-#atom-canvas .shell {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 5;
-}
-
-/* The rotating container for electrons */
+    #atom-canvas .shell, 
 #atom-canvas .orbit {
     position: absolute;
     top: 50%;
     left: 50%;
-    /* Width and Height will be set by JS to match the shell */
-    transform-origin: center;
+    border-radius: 50%;
     pointer-events: none;
-    animation: el-orbit-rotation var(--speed) linear infinite;
-    z-index: 6;
 }
 
-/* The actual electron dot */
+#atom-canvas .shell {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%);
+}
+
+#atom-canvas .orbit {
+    /* The animation will now rotate the div around the nucleus */
+    animation: el-orbit-rotation var(--speed) linear infinite;
+}
+
 #atom-canvas .e-particle {
     position: absolute;
-    top: 0; 
-    left: 50%;
     width: 10px;
     height: 10px;
     background: #fbff00;
     border-radius: 50%;
-    /* Translate -50% centers the 10px dot on the 50% left mark */
-    /* TranslateY -5px centers the dot vertically on the thin shell line */
-    transform: translate(-50%, -5px); 
-    box-shadow: 0 0 10px #fbff00, 0 0 20px rgba(251, 255, 0, 0.5);
+    box-shadow: 0 0 10px #fbff00;
 }
 
-/* Scoped Animation to avoid conflicts */
 @keyframes el-orbit-rotation {
+    /* We must keep the translate(-50%, -50%) so it stays centered while rotating */
     from { transform: translate(-50%, -50%) rotate(0deg); }
     to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
+    
 .nucleus-static {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     width: 25px; height: 25px; background: #ff4d4d; border-radius: 50%;
@@ -3888,6 +3878,7 @@ function initElementsLab() {
     }
 }
       
+
 function updateElementsLab(dp, de) {
     elPCount = Math.max(0, elPCount + dp); 
     elECount = Math.max(0, elECount + de);
@@ -3895,54 +3886,52 @@ function updateElementsLab(dp, de) {
     document.getElementById('eCountVal').innerText = elECount;
     
     const canvas = document.getElementById('atom-canvas');
-    // Clean up previous elements
-    canvas.querySelectorAll('.shell, .orbit-container').forEach(el => el.remove());
+    // Clear only Bohr-related elements
+    canvas.querySelectorAll('.shell, .orbit').forEach(el => el.remove());
     
     const config = [2, 8, 18, 32, 32, 18, 8];
     let rem = elECount;
 
     config.forEach((max, i) => {
-        if (rem <= 0) return;
-        const inShell = Math.min(rem, max);
-        const radius = 35 + (i * 25); // Increased spacing slightly for clarity
-          
-        // 1. Create the visual Ring (Shell)
-        const s = document.createElement('div'); 
-        s.className = 'shell';
-        s.style.width = (radius * 2) + 'px'; 
-        s.style.height = (radius * 2) + 'px';
-        canvas.appendChild(s);
+    if (rem <= 0) return;
+    const inShell = Math.min(rem, max);
+    const radius = 35 + (i * 25); 
+    const diameter = radius * 2;
+      
+    // Create the visual ring
+    const s = document.createElement('div'); 
+    s.className = 'shell';
+    s.style.width = diameter + 'px'; 
+    s.style.height = diameter + 'px';
+    canvas.appendChild(s);
+    
+    for(let j = 0; j < inShell; j++) {
+        // Create the orbit container
+        const orb = document.createElement('div'); 
+        orb.className = 'orbit';
+        orb.style.width = diameter + 'px';
+        orb.style.height = diameter + 'px';
         
-        // 2. Create a container for this shell's electrons
-        const shellContainer = document.createElement('div');
-        shellContainer.className = 'orbit-container';
-        shellContainer.style.width = (radius * 2) + 'px';
-        shellContainer.style.height = (radius * 2) + 'px';
-        canvas.appendChild(shellContainer);
-        
-        for(let j=0; j < inShell; j++) {
-            // Create a wrapper that rotates
-            const orb = document.createElement('div'); 
-            orb.className = 'orbit';
-            // Distribute electrons evenly around the circle
-            const initialRotation = j * (360 / inShell);
-            orb.style.transform = `rotate(${initialRotation}deg)`;
-            orb.style.setProperty('--speed', (6 + i * 2) + 's');
-            
-            // Create the actual electron dot
-            const e = document.createElement('div'); 
-            e.className = 'e-particle';
-            // Position it exactly at the top center of the orbit ring
-            e.style.top = "-5px"; 
-            e.style.left = "50%";
-            e.style.transform = "translateX(-50%)";
+        // Distribute electrons by rotation degrees
+        const angle = j * (360 / inShell);
+        orb.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+        orb.style.setProperty('--speed', (6 + i * 2) + 's');
 
-            orb.appendChild(e);
-            shellContainer.appendChild(orb);
-        }
-        rem -= inShell;
-    });
+        // Create the electron dot
+        const e = document.createElement('div'); 
+        e.className = 'e-particle';
+        // Position it exactly on the top edge of the orbit div
+        e.style.top = "-5px"; 
+        e.style.left = "50%";
+        e.style.transform = "translateX(-50%)";
+
+        orb.appendChild(e);
+        canvas.appendChild(orb);
+    }
+    rem -= inShell;
+});
 }
+    
 
 
 function resetElementsGame() {
