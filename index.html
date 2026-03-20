@@ -3126,6 +3126,7 @@ function startLab(choice) {
     }
 
 
+
     // --- GLOBAL STATE ---
 let dilutionAiTimer = null; 
 let dilAttempts = 0;
@@ -3200,7 +3201,8 @@ Format as bullet points. Max 30 words. Use technical/terminal tone.`;
 
             // 4. SUCCESSFUL RENDER
             let finalOutput = baseDisplay;
-            finalOutput += `🔍 SCAN COMPLETE:\n${response?.toString().trim() || "No response data"}\n`;
+            // FIXED: Extract content from ChatResponse object - single line change
+            finalOutput += `🔍 SCAN COMPLETE:\n${(response?.message?.content || response || "No response").toString().trim()}\n`;
             
             if (statusUpdate) {
                 finalOutput += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
@@ -3214,11 +3216,11 @@ Format as bullet points. Max 30 words. Use technical/terminal tone.`;
             console.error("Puter AI Error:", err);
             
             let errorMsg = "System busy";
-            if (err.name === 'AbortError' || err.message.includes('Timeout')) {
+            if (err.name === 'AbortError' || err.message?.includes('Timeout')) {
                 errorMsg = "Connection timeout - uplink unstable";
-            } else if (err.message.includes('authentication') || err.message.includes('auth')) {
+            } else if (err.message?.includes('authentication') || err.message?.includes('auth')) {
                 errorMsg = "Authentication required - check Puter session";
-            } else if (err.message.includes('rate') || err.message.includes('limit')) {
+            } else if (err.message?.includes('rate') || err.message?.includes('limit')) {
                 errorMsg = "Rate limit exceeded - retry shortly";
             }
 
@@ -3353,7 +3355,8 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.warn("Puter AI not detected - ensure running on puter.com");
     }
-});
+})
+
 
     
 
