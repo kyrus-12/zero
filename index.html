@@ -3135,79 +3135,62 @@ const dilGuides = {
     'answer': "<b>Stoichiometry Check:</b> Calculate the missing variable based on $M_1V_1 = M_2V_2$."
 };
 
+
+    let aiDebounceTimer; 
+
 /**
- * PUTER AI: PROCEDURAL ANALYSIS ENGINE
- * Dynamically derives safety data by decomposing the chemical name and context.
+ * PUTER AI: INDEPENDENT ANALYSIS ENGINE
+ * Replaces static logic with a live generative call to analyze chemicals.
  */
-function runPuterAIScan(statusUpdate = null) {
-    const compound = document.getElementById('dil-compound').value.trim();
+async function runPuterAIScan(statusUpdate = null) {
+    const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
     const problemText = document.getElementById('dil-problem-sentence').innerText;
     const scratchpad = document.getElementById('dil-scratchpad');
     
-    // 1. PROPERTY DECOMPOSITION (The AI "Reads" the molecules)
-    const isBase = /hydroxide|oxide|sodium|potassium/i.test(compound);
-    const isOxidizer = /nitrate|oxide|permanganate/i.test(compound);
-    const isMetal = /copper|iron|zinc|magnesium/i.test(compound);
-    const isUrgent = /urgent|emergency|critical/i.test(problemText);
+    // 1. PREPARE THE TERMINAL HEADER
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
+    baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
+    baseDisplay += `------------------------------------------------\n`;
 
-    // 2. GENERATIVE HAZARD IDENTIFICATION
-    let hazardLevel = isUrgent ? "⚠️ CRITICAL" : "🔍 NOMINAL";
-    let hazardDesc = [];
-    if (isBase) hazardDesc.push("CORROSIVE (High pH)");
-    if (isOxidizer) hazardDesc.push("REACTIVE (Oxidizer)");
-    if (isMetal) hazardDesc.push("TOXIC (Heavy Metal)");
-    if (hazardDesc.length === 0) hazardDesc.push("Low Acute Hazard");
+    // Immediate UI feedback while the AI "thinks"
+    const currentParts = scratchpad.value.split('------------------------------------------------');
+    const userNotes = currentParts.length > 1 ? currentParts[currentParts.length - 1].trim() : "// START CALCULATIONS...";
+    scratchpad.value = baseDisplay + "[SCANNING MOLECULAR STRUCTURE...]\n" + "------------------------------------------------\n\n" + userNotes;
 
-    // 3. LOGIC-BASED PPE & DISPOSAL
-    let ppeItems = ["Safety Goggles", "Lab Coat"];
-    if (isBase || isOxidizer) ppeItems.push("Face Shield", "Nitrile Gloves (Double Layer)");
-    if (isUrgent) ppeItems.push("Respirator Mask");
+    // 2. INDEPENDENT AI CALL (Debounced to prevent spam)
+    clearTimeout(aiDebounceTimer);
+    aiDebounceTimer = setTimeout(async () => {
+        try {
+            // The AI independently identifies Hazards, PPE, and Disposal based on the compound name
+            const aiResponse = await puter.ai.chat(
+                `Acting as a Lab Safety AI, analyze the reagent: ${compound}. 
+                Context: ${problemText}. 
+                Briefly list: 1. Hazard, 2. Required PPE, 3. Disposal. 
+                Keep it under 30 words and use a professional terminal tone.`
+            );
 
-    let disposalPath = "General Waste Stream";
-    if (isMetal) disposalPath = "Heavy Metal Toxic Collection (Do Not Flush)";
-    if (isBase) disposalPath = "Neutralize to pH 7.0 before disposal";
-
-    // 4. CONTEXTUAL FEEDBACK (Calculated Suggestion)
-    let suggestion = "Monitor solution for temperature changes.";
-    if (isBase) suggestion = "Exothermic potential: Always add solute to solvent (Water) slowly.";
-    if (isOxidizer) suggestion = "Keep away from organic stabilizers and wooden implements.";
-
-    // 5. TERMINAL OUTPUT
-    const timestamp = new Date().toLocaleTimeString();
-    let aiLog = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
-    aiLog += `TARGET: ${compound || "Unknown"}\n`;
-    aiLog += `------------------------------------------------\n`;
-    aiLog += `🔍 ANALYSIS: ${hazardLevel} - ${hazardDesc.join(" + ")}\n`;
-    aiLog += `🛡️ REQUIRED PPE: ${ppeItems.join(", ")}\n`;
-    aiLog += `♻️ DISPOSAL: ${disposalPath}\n`;
-    aiLog += `💡 SUGGESTION: ${suggestion}\n`;
-    
-    if (statusUpdate) aiLog += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
-    aiLog += `------------------------------------------------\n\n`;
-
-    // Preserves student's workspace
-    const parts = scratchpad.value.split('------------------------------------------------');
-    const studentWork = parts.length > 1 ? parts[parts.length - 1].trim() : "// START CALCULATIONS...";
-    scratchpad.value = aiLog + studentWork;
+            // 3. RENDER FINAL DYNAMIC LOG
+            let finalLog = baseDisplay;
+            finalLog += `🔍 ANALYSIS COMPLETE:\n${aiResponse}\n`;
+            
+            if (statusUpdate) {
+                finalLog += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
+            }
+            finalLog += `------------------------------------------------\n\n`;
+            
+            scratchpad.value = finalLog + userNotes;
+        } catch (err) {
+            scratchpad.value = baseDisplay + `⚠️ SCANNER ERROR: Connection to AI Uplink lost.\n------------------------------------------------\n\n` + userNotes;
+        }
+    }, 600); // 600ms debounce
 }
 
 /**
- * GENERATIVE SCENARIO ENGINE
+ * UPDATED GENERATION
+ * Now calls the Async scan after generating the problem.
  */
-function generateDynamicScenario() {
-    const metals = ["Sodium", "Potassium", "Copper(II)", "Magnesium", "Calcium", "Iron(III)", "Zinc"];
-    const anions = ["Chloride", "Sulfate", "Nitrate", "Carbonate", "Hydroxide", "Oxide"];
-    const sectors = ["Medical Wing", "Industrial Plant", "Environmental Lab", "Research Sector 7"];
-    const tasks = ["Urgent Analysis", "Standard Protocol", "Contamination Check", "Synthesis Run"];
-
-    const name = `${metals[Math.floor(Math.random() * metals.length)]} ${anions[Math.floor(Math.random() * anions.length)]}`;
-    const mm = (Math.random() * 180 + 40).toFixed(2);
-    const context = `[${tasks[Math.floor(Math.random() * tasks.length)]} @ ${sectors[Math.floor(Math.random() * sectors.length)]}]`;
-
-    return { name, mm, context };
-}
-
-function generateDilutionProblem() {
+async function generateDilutionProblem() {
     resetDilutionLab();
     const data = generateDynamicScenario();
     
@@ -3215,29 +3198,30 @@ function generateDilutionProblem() {
     const V1 = (Math.random() * 50 + 5).toFixed(1);
     const V2 = (parseFloat(V1) + (Math.random() * 200 + 50)).toFixed(1);
     const M2 = ((M1 * V1) / V2).toFixed(3);
-    const mass = (M1 * (V1 / 1000) * data.mm).toFixed(2);
+    const mm = data.mm;
 
     const type = ['V1', 'M2', 'V2', 'mass'][Math.floor(Math.random() * 4)];
-    
     const templates = {
-        'V1': `${data.context} Determine the **volume of stock (V1)** for **${data.name}** to reach ${V2}mL at ${M2}M from a ${M1}M source.`,
-        'M2': `${data.context} If ${V1}mL of ${M1}M **${data.name}** is diluted to ${V2}mL, find the **new Molarity (M2)**.`,
-        'V2': `${data.context} To what **final volume (V2)** must you dilute ${V1}mL of ${M1}M **${data.name}** to reach ${M2}M?`,
-        'mass': `${data.context} Calculate the **grams** of **${data.name}** (MM: ${data.mm}) needed for the initial ${V1}mL of ${M1}M stock.`
+        'V1': `${data.context} Determine **V1** of **${data.name}** for ${V2}mL at ${M2}M from ${M1}M.`,
+        'M2': `${data.context} If ${V1}mL of ${M1}M **${data.name}** is diluted to ${V2}mL, solve for **M2**.`,
+        'V2': `${data.context} To what **V2** must you dilute ${V1}mL of ${M1}M **${data.name}** to reach ${M2}M?`,
+        'mass': `${data.context} Find the **grams** of **${data.name}** (MM: ${mm}) for the initial ${V1}mL of ${M1}M stock.`
     };
 
     document.getElementById('dil-compound').value = data.name;
-    document.getElementById('dil-molarMass').value = data.mm;
+    document.getElementById('dil-molarMass').value = mm;
     document.getElementById('dil-problem-sentence').innerHTML = templates[type];
 
+    // Answer Logic
     if(type === 'V1') currentCorrectAnswer = parseFloat(V1);
     else if(type === 'M2') currentCorrectAnswer = parseFloat(M2);
     else if(type === 'V2') currentCorrectAnswer = parseFloat(V2);
-    else currentCorrectAnswer = parseFloat(mass);
+    else currentCorrectAnswer = ((M1 * (V1 / 1000)) * mm).toFixed(2);
 
-    runPuterAIScan("REAGENT LOADED: Initiating Molecular Scan...");
+    // Trigger the independent AI scan
+    await runPuterAIScan("REAGENT DETECTED: Analyzing chemical signatures...");
 }
-
+    
 function updateDilGuide(field) {
     const guideBox = document.getElementById('guide-text');
     if (guideBox && dilGuides[field]) guideBox.innerHTML = dilGuides[field];
