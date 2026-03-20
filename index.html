@@ -3118,6 +3118,7 @@ function startLab(choice) {
 
 
 
+
 // --- GLOBAL STATE ---
 let dilutionAiTimer = null; 
 let dilAttempts = 0;
@@ -3127,21 +3128,19 @@ let isPuterAvailable = false;
 
 /**
  * PUTER AI: INDEPENDENT ANALYSIS ENGINE
- * Refactored to handle Async execution without timer-collision errors.
- * Enhanced with availability checking and error recovery.
+ * Fully functional with proper response handling
  */
 async function runPuterAIScan(statusUpdate = null) {
     const compound = document.getElementById('dil-compound').value.trim() || "Unknown Specimen";
     const problemText = document.getElementById('dil-problem-sentence').innerText;
     const scratchpad = document.getElementById('dil-scratchpad');
     
-    // Check if element exists
     if (!scratchpad) {
         console.error("Scratchpad element not found");
         return;
     }
 
-    // 1. IMMEDIATE UI FEEDBACK (Instant response)
+    // 1. IMMEDIATE UI FEEDBACK
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     let baseDisplay = `[PUTER AI SYSTEM SCAN - ${timestamp}]\n`;
     baseDisplay += `TARGET: ${compound.toUpperCase()}\n`;
@@ -3156,10 +3155,10 @@ async function runPuterAIScan(statusUpdate = null) {
 
     // 2. CHECK PUTER AVAILABILITY
     if (typeof puter === 'undefined' || !puter.ai || !puter.ai.chat) {
-        console.warn("Puter AI not available - running in fallback mode");
+        console.warn("Puter AI not available");
         scratchpad.value = baseDisplay + 
             `⚠️ PUTER AI OFFLINE\n[REAGENT: ${compound}]\n` +
-            `Local analysis mode active. AI features require Puter environment.\n` +
+            `Local analysis mode. AI requires Puter environment.\n` +
             `------------------------------------------------\n\n` + userNotes;
         return;
     }
@@ -3177,22 +3176,36 @@ Context: ${problemText}.
 Provide exactly: 1. Primary Hazard, 2. Required PPE, 3. Disposal Code. 
 Format as bullet points. Max 30 words. Use technical/terminal tone.`;
 
-            // The AI Call with timeout protection
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+            // FIXED: Proper Puter AI call with model specification
+            const response = await puter.ai.chat(prompt, { 
+                model: "gpt-4.1-nano"  // Using reliable, fast model
+            });
 
-            const response = await Promise.race([
-                puter.ai.chat(prompt, { signal: controller.signal }),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error("AI Response Timeout")), 10000)
-                )
-            ]);
+            // FIXED: Extract text from response object properly
+            let aiText = "";
             
-            clearTimeout(timeoutId);
+            // Handle different response formats from Puter AI
+            if (typeof response === 'string') {
+                aiText = response;
+            } else if (response && response.message) {
+                // OpenAI-style response: response.message.content
+                if (response.message.content) {
+                    if (typeof response.message.content === 'string') {
+                        aiText = response.message.content;
+                    } else if (Array.isArray(response.message.content)) {
+                        // Claude-style array content
+                        aiText = response.message.content.map(c => c.text || c).join('');
+                    }
+                }
+            } else if (response && response.text) {
+                aiText = response.text;
+            } else {
+                aiText = JSON.stringify(response); // Fallback
+            }
 
             // 4. SUCCESSFUL RENDER
             let finalOutput = baseDisplay;
-            finalOutput += `🔍 SCAN COMPLETE:\n${response?.toString().trim() || "No response data"}\n`;
+            finalOutput += `🔍 SCAN COMPLETE:\n${aiText.trim()}\n`;
             
             if (statusUpdate) {
                 finalOutput += `\n📡 SYSTEM MSG: ${statusUpdate}\n`;
@@ -3202,16 +3215,17 @@ Format as bullet points. Max 30 words. Use technical/terminal tone.`;
             scratchpad.value = finalOutput + userNotes;
 
         } catch (err) {
-            // Comprehensive error handling
             console.error("Puter AI Error:", err);
             
             let errorMsg = "System busy";
-            if (err.name === 'AbortError' || err.message.includes('Timeout')) {
-                errorMsg = "Connection timeout - uplink unstable";
-            } else if (err.message.includes('authentication') || err.message.includes('auth')) {
-                errorMsg = "Authentication required - check Puter session";
-            } else if (err.message.includes('rate') || err.message.includes('limit')) {
-                errorMsg = "Rate limit exceeded - retry shortly";
+            if (err.name === 'AbortError' || err.message?.includes('Timeout')) {
+                errorMsg = "Connection timeout";
+            } else if (err.message?.includes('authentication') || err.message?.includes('auth')) {
+                errorMsg = "Authentication required";
+            } else if (err.message?.includes('rate') || err.message?.includes('limit')) {
+                errorMsg = "Rate limit exceeded";
+            } else if (err.message) {
+                errorMsg = err.message;
             }
 
             scratchpad.value = baseDisplay + 
@@ -3220,7 +3234,7 @@ Format as bullet points. Max 30 words. Use technical/terminal tone.`;
                 `Retry: Generate new problem to re-trigger scan.\n` +
                 `------------------------------------------------\n\n` + userNotes;
         }
-    }, 500); // 500ms debounce
+    }, 500);
 }
 
 /**
@@ -3247,7 +3261,7 @@ async function generateDilutionProblem() {
         'mass': `${data.context} Find the **grams** of **${data.name}** (MM: ${mm}) for the initial ${V1}mL of ${M1}M stock.`
     };
 
-    // DOM Updates with null checks
+    // DOM Updates
     const compoundEl = document.getElementById('dil-compound');
     const mmEl = document.getElementById('dil-molarMass');
     const problemEl = document.getElementById('dil-problem-sentence');
@@ -3264,7 +3278,7 @@ async function generateDilutionProblem() {
 
     currentSolvingFor = type;
 
-    // CALL SCAN with slight delay to ensure DOM is ready
+    // CALL SCAN
     setTimeout(() => {
         runPuterAIScan("REAGENT LOADED: Analyzing molecular stability...");
     }, 100);
@@ -3278,7 +3292,6 @@ function generateDynamicScenario() {
     const anion = anions[Math.floor(Math.random() * anions.length)];
     const name = `${metal} ${anion}`;
     
-    // Approximate molar mass calculation
     const metalMasses = { "Sodium": 23, "Potassium": 39, "Copper(II)": 63.5, "Zinc": 65, "Iron(III)": 56, "Calcium": 40, "Magnesium": 24, "Barium": 137 };
     const anionMasses = { "Hydroxide": 17, "Sulfate": 96, "Nitrate": 62, "Chloride": 35.5, "Carbonate": 60, "Phosphate": 95, "Acetate": 59 };
     const calculatedMm = (metalMasses[metal] || 50) + (anionMasses[anion] || 50);
@@ -3298,7 +3311,6 @@ function resetDilutionLab() {
         if (el) el.value = ""; 
     });
     
-    // Clear scratchpad but keep header
     const scratchpad = document.getElementById('dil-scratchpad');
     if (scratchpad) {
         scratchpad.value = "// READY FOR ANALYSIS...";
@@ -3338,15 +3350,13 @@ function checkDilutionAnswer() {
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', function() {
-    // Check Puter availability on load
     if (typeof puter !== 'undefined' && puter.ai && puter.ai.chat) {
-        console.log("Puter AI detected and ready");
+        console.log("✅ Puter AI detected and ready");
         isPuterAvailable = true;
     } else {
-        console.warn("Puter AI not detected - ensure running on puter.com");
+        console.warn("⚠️ Puter AI not detected - ensure running on puter.com with <script src='https://js.puter.com/v2/'></script>");
     }
 });
-
     
 
  
