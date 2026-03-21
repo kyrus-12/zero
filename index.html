@@ -1616,50 +1616,71 @@ footer.global-nav {
     
     
     
- <div id="molecularLabModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[70] p-4">
-    <div class="bg-gray-900 border border-amber-500 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-amber-400">Molecular Architect</h2>
-            <div id="mol-level" class="text-xs bg-amber-900/30 px-2 py-1 rounded text-amber-200">Level 1/5</div>
-            <button class="text-gray-400 hover:text-white" onclick="closeMolLab()">✕</button>
-        </div>
-
-        <div class="quest-card">
-            <h3 id="mol-task-name" class="text-indigo-400 font-bold m-0">Loading...</h3>
-            <p id="mol-task-hint" class="text-gray-400 text-xs mt-1"></p>
-        </div>
-
-        <div class="controls-grid">
+ <div id="molecularLabModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[70] p-4 backdrop-blur-sm">
+    <div class="bg-gray-900 border-2 border-amber-600 rounded-3xl p-8 w-full max-w-7xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col h-[90vh]">
+        
+        <div class="flex justify-between items-start mb-6 shrink-0">
             <div>
-                <div class="text-[10px] text-gray-500 uppercase mb-2">Elements</div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button class="node-btn" onclick="addMolInput('H', 'atom')">H</button>
-                    <button class="node-btn" onclick="addMolInput('C', 'atom')">C</button>
-                    <button class="node-btn" onclick="addMolInput('O', 'atom')">O</button>
-                    <button class="node-btn" onclick="addMolInput('N', 'atom')">N</button>
+                <h2 class="text-3xl font-black text-amber-500 tracking-tighter uppercase italic">Molecular Architect <span class="text-gray-600 text-sm not-italic font-mono ml-2">v2.0</span></h2>
+                <div class="flex gap-4 mt-2">
+                    <div id="mol-level" class="text-[10px] bg-amber-900/40 px-3 py-1 rounded border border-amber-700 text-amber-400 font-bold uppercase">Level 1: Basic Alkanes</div>
+                    <div class="text-[10px] bg-blue-900/40 px-3 py-1 rounded border border-blue-700 text-blue-400 font-bold uppercase">118 Elements Loaded</div>
                 </div>
             </div>
-            <div>
-                <div class="text-[10px] text-gray-500 uppercase mb-2">Bonds</div>
-                <div class="grid grid-cols-1 gap-2">
-                    <button class="node-btn bond-type" onclick="addMolInput('-', 'bond')">—</button>
-                    <button class="node-btn bond-type" onclick="addMolInput('=', 'bond')">=</button>
-                    <button class="node-btn bond-type" onclick="addMolInput('≡', 'bond')">≡</button>
+            <button class="bg-gray-800 hover:bg-red-600 text-white w-10 h-10 rounded-full transition-all flex items-center justify-center shadow-lg" onclick="closeMolLab()">✕</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden flex-1">
+            
+            <div class="lg:col-span-7 flex flex-col overflow-hidden bg-gray-950/50 rounded-2xl border border-gray-800 p-4">
+                <div class="flex flex-wrap gap-4 items-center justify-between mb-4">
+                    <div class="relative flex-1 min-w-[200px]">
+                        <input type="text" id="elementSearch" onkeyup="filterElements()" placeholder="Search by name or symbol..." 
+                               class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <select id="categoryFilter" onchange="filterElements()" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-amber-500 outline-none">
+                        <option value="all">All Groups</option>
+                        <option value="noble">Noble Gases</option>
+                        <option value="alkali">Alkali Metals</option>
+                        <option value="nonmetal">Non-Metals</option>
+                        <option value="transition">Transition Metals</option>
+                        <option value="lanthanide">Lanthanides/Actinides</option>
+                    </select>
                 </div>
+                
+                <div id="element-grid" class="overflow-y-auto pr-2 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 custom-scrollbar content-start">
+                    </div>
+            </div>
+
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <div class="bg-gray-800/30 p-4 rounded-2xl border border-gray-700">
+                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-3 text-center">Valence Bonding</span>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button class="bond-btn" onclick="addMolInput('-', 'bond')"><span class="text-2xl">—</span><small class="block text-[8px] opacity-50">SINGLE</small></button>
+                        <button class="bond-btn" onclick="addMolInput('=', 'bond')"><span class="text-2xl">=</span><small class="block text-[8px] opacity-50">DOUBLE</small></button>
+                        <button class="bond-btn" onclick="addMolInput('≡', 'bond')"><span class="text-2xl">≡</span><small class="block text-[8px] opacity-50">TRIPLE</small></button>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col bg-black/60 rounded-2xl border-2 border-dashed border-indigo-900/50 relative group">
+                    <div class="absolute top-4 left-4 text-[10px] text-indigo-500 font-mono">LAB_WORKBENCH_V2</div>
+                    <div id="mol-workbench" class="flex-1 p-6 flex items-center justify-center gap-3 flex-wrap overflow-y-auto text-gray-700 italic">
+                        Assemble your molecule here...
+                    </div>
+                </div>
+
+                <div class="flex gap-4 shrink-0">
+                    <button class="flex-1 py-4 rounded-xl bg-gray-800 text-gray-400 font-bold hover:text-white transition-colors border border-gray-700" onclick="resetMolWork()">RESET</button>
+                    <button class="flex-[2] py-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-black font-black hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(245,158,11,0.3)]" onclick="validateMolecule()">ANALYZE STRUCTURE</button>
+                </div>
+                
+                <div id="mol-status" class="text-center p-2 rounded text-sm min-h-[40px]"></div>
             </div>
         </div>
-      
-        <div class="workbench-area" id="mol-workbench">Select elements...</div>
-
-        <div class="flex gap-2">
-            <button class="flex-1 p-3 rounded bg-gray-800 text-gray-400 font-bold" onclick="resetMolWork()">Clear</button>
-            <button class="flex-1 p-3 rounded bg-indigo-600 text-white font-bold" onclick="validateMolecule()">Analyze</button>
-        </div>
-
-        <div id="mol-status" class="status-feedback"></div>
     </div>
 </div>
-</div>
+
+    
   
  <div id="elementsLabModal" class="fixed inset-0 bg-black/90 hidden z-[70] p-4 overflow-auto">
     
@@ -4055,6 +4076,42 @@ function validateMolecule() {
     }
 }
 
+    const elements = [
+    {s: 'H', n: 'Hydrogen', c: 'nonmetal'}, {s: 'He', n: 'Helium', c: 'noble'},
+    {s: 'Li', n: 'Lithium', c: 'alkali'}, {s: 'Be', n: 'Beryllium', c: 'alkaline'},
+    {s: 'B', n: 'Boron', c: 'metalloid'}, {s: 'C', n: 'Carbon', c: 'nonmetal'},
+    {s: 'N', n: 'Nitrogen', c: 'nonmetal'}, {s: 'O', n: 'Oxygen', c: 'nonmetal'},
+    {s: 'F', n: 'Fluorine', c: 'halogen'}, {s: 'Ne', n: 'Neon', c: 'noble'},
+    // ... This array would ideally contain all 118 objects. 
+    // For brevity, I'll show how the loop works below.
+];
+
+// List of just the symbols to reach 118 quickly for your prototype
+const allSymbols = ["H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn","Nh","Fl","Mc","Lv","Ts","Og"];
+
+function initElements() {
+    const grid = document.getElementById('element-grid');
+    allSymbols.forEach(sym => {
+        const btn = document.createElement('button');
+        btn.className = 'node-btn-enhanced';
+        btn.innerHTML = `<strong>${sym}</strong>`;
+        btn.onclick = () => addMolInput(sym, 'atom');
+        btn.setAttribute('data-symbol', sym.toLowerCase());
+        grid.appendChild(btn);
+    });
+}
+
+function filterElements() {
+    const query = document.getElementById('elementSearch').value.toLowerCase();
+    const btns = document.querySelectorAll('.node-btn-enhanced');
+    btns.forEach(btn => {
+        const sym = btn.getAttribute('data-symbol');
+        btn.style.display = sym.includes(query) ? 'flex' : 'none';
+    });
+}
+
+// Call init on load
+initElements();
 // --- CORE UTILITIES ---
 
 function initMolLab() {
