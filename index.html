@@ -2082,6 +2082,8 @@ const display = document.getElementById('calc-display');
             setTimeout(calcClear, 1500);
         }
     }
+
+    
 let globalZ = 1000;
 
 function makeElementDraggable(id) {
@@ -2978,82 +2980,6 @@ function resetMassScales() {
 }
 
 
-   function increaseFont() {
-    let current = parseFloat(
-        getComputedStyle(document.documentElement)
-        .getPropertyValue('--app-font-scale')
-    );
-
-    document.documentElement.style.setProperty(
-        '--app-font-scale',
-        current + 0.1
-    );
-}
-
-function decreaseFont() {
-    let current = parseFloat(
-        getComputedStyle(document.documentElement)
-        .getPropertyValue('--app-font-scale')
-    );
-
-    document.documentElement.style.setProperty(
-        '--app-font-scale',
-        Math.max(0.7, current - 0.1)
-    );
-}
-
-            // Lab Menu Toggle
-function toggleLabMenu() {
-    const modal = document.getElementById('labMenuModal'); // Ensure you have this ID in your selection menu
-    if (modal) {
-        modal.classList.toggle('hidden');
-        modal.classList.toggle('flex');
-    }
-}
-
-// Final startLab switcher
-function startLab(choice) {
-    // Hide the selection menu
-    document.getElementById('labMenuModal').classList.add('hidden');
-    
-    // Open the chosen lab
-    if (choice === 'electrons') {
-        document.getElementById('electronLabModal').classList.remove('hidden');
-        document.getElementById('electronLabModal').classList.add('flex');
-        initElectronLab();
-    } else if (choice === 'elements') {
-        document.getElementById('elementsLabModal').classList.remove('hidden');
-        document.getElementById('elementsLabModal').classList.add('flex');
-        initElementsLab();
-    } else if (choice === 'solutions') {
-        document.getElementById('solutionLabModal').classList.remove('hidden');
-        document.getElementById('solutionLabModal').classList.add('flex');
-        initSolutionLab();     
-    } else if (choice === 'dilution') {
-        document.getElementById('dilutionLabModal').classList.remove('hidden');
-        document.getElementById('dilutionLabModal').classList.add('flex');
-        initDilutionLab();     
-    }  else if (choice === 'mass') {
-        document.getElementById('massLabModal').classList.remove('hidden');
-        document.getElementById('massLabModal').classList.add('flex');
-        initMassLab();  
-} else if (choice === 'phase') {
-        document.getElementById('phaseLabModal').classList.remove('hidden');
-        document.getElementById('phaseLabModal').classList.add('flex');
-        initPhaseLab();  
-} else if (choice === 'particles') {
-        document.getElementById('particlesLabModal').classList.remove('hidden');
-        document.getElementById('particlesLabModal').classList.add('flex');
-        initParticlesLab();  
-} else if (choice === 'concen') {
-        document.getElementById('concenLabModal').classList.remove('hidden');
-        document.getElementById('concenLabModal').classList.add('flex');
-        initConcenLab();  
-}
-}
-
-
-
     function closeDilutionLab() {
     const modal = document.getElementById('dilutionLabModal');
     modal.classList.add('hidden');
@@ -3845,6 +3771,74 @@ function resetElementsGame() {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
+}
+
+
+
+   function increaseFont() {
+    let current = parseFloat(
+        getComputedStyle(document.documentElement)
+        .getPropertyValue('--app-font-scale')
+    );
+
+    document.documentElement.style.setProperty(
+        '--app-font-scale',
+        current + 0.1
+    );
+}
+
+function decreaseFont() {
+    let current = parseFloat(
+        getComputedStyle(document.documentElement)
+        .getPropertyValue('--app-font-scale')
+    );
+
+    document.documentElement.style.setProperty(
+        '--app-font-scale',
+        Math.max(0.7, current - 0.1)
+    );
+}
+
+    
+// Final startLab switcher
+function startLab(choice) {
+    // Hide the selection menu
+    document.getElementById('labMenuModal').classList.add('hidden');
+    
+    // Open the chosen lab
+    if (choice === 'electrons') {
+        document.getElementById('electronLabModal').classList.remove('hidden');
+        document.getElementById('electronLabModal').classList.add('flex');
+        initElectronLab();
+    } else if (choice === 'elements') {
+        document.getElementById('elementsLabModal').classList.remove('hidden');
+        document.getElementById('elementsLabModal').classList.add('flex');
+        initElementsLab();
+    } else if (choice === 'solutions') {
+        document.getElementById('solutionLabModal').classList.remove('hidden');
+        document.getElementById('solutionLabModal').classList.add('flex');
+        initSolutionLab();     
+    } else if (choice === 'dilution') {
+        document.getElementById('dilutionLabModal').classList.remove('hidden');
+        document.getElementById('dilutionLabModal').classList.add('flex');
+        initDilutionLab();     
+    }  else if (choice === 'mass') {
+        document.getElementById('massLabModal').classList.remove('hidden');
+        document.getElementById('massLabModal').classList.add('flex');
+        initMassLab();  
+} else if (choice === 'phase') {
+        document.getElementById('phaseLabModal').classList.remove('hidden');
+        document.getElementById('phaseLabModal').classList.add('flex');
+        initPhaseLab();  
+} else if (choice === 'particles') {
+        document.getElementById('particlesLabModal').classList.remove('hidden');
+        document.getElementById('particlesLabModal').classList.add('flex');
+        initParticlesLab();  
+} else if (choice === 'concen') {
+        document.getElementById('concenLabModal').classList.remove('hidden');
+        document.getElementById('concenLabModal').classList.add('flex');
+        initConcenLab();  
+}
 }
   
   // --- Floating Thoughts System ---
