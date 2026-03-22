@@ -97,8 +97,7 @@
     /* footer */
     footer.global-nav{
       position:fixed;
-      bottom:0;
-      right: 0;
+      left:0;right:0;botoom:0;
       background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
       border-top:1px solid rgba(96,165,250,0.04);
       padding:.5rem 0;
@@ -107,6 +106,9 @@
     }
     .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:.78rem;gap:.25rem;padding:.35rem .5rem}
 
+  .modal-overlay {
+   z-index: 100; /* This ensures the modal covers the footer */
+}
     /* modal-like panel for assessments */
     .assess-panel{
       position:fixed;
@@ -416,6 +418,22 @@ body.theme-nature {
     .btn-sci { @apply p-3 bg-blue-900/20 hover:bg-blue-900/40 text-blue-300 rounded-lg transition-all text-xs font-bold; }
     .btn-op { @apply p-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-all text-sm font-bold; }
     #floating-calc .btn-primary { @apply rounded-lg transition-all shadow-lg shadow-blue-900/20; }
+
+ #step-1 > div, 
+#step-1 .card {
+  min-height: 120px; /* Adjust this number to change height */
+  padding: 1rem;     /* Adjust internal spacing */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+#step-1 h3 {
+  font-size: 1.1rem; /* Adjust subtopic text size */
+  line-height: 1.2;
+}
    
     /* Elements Lab Styles */
 .periodic-grid {
