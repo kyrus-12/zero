@@ -3988,41 +3988,85 @@ function applyBrainSide(side) {
     }
 }
 
+ 
 
- let aiDebounceTimer;
+// --- 🧠 FLOATING THOUGHTS SPECIALIZED AI MODULE ---
+const FloatingThoughtAI = {
+    synth: window.speechSynthesis,
+    currentUtterance: null,
+    clickTimer: null,
+    aiDebounceTimer: null,
+
+    // 🟢 Specialized Speech Controller
+    speak: function(text) {
+        this.synth.cancel(); // Stop only THIS module's speech
+        this.currentUtterance = new SpeechSynthesisUtterance(text);
+        this.currentUtterance.rate = 1.0;
+        this.currentUtterance.pitch = 1.1;
+        this.synth.speak(this.currentUtterance);
+    },
+
+    // 🟢 Restart Logic for recent feedback
+    restartSpeech: function() {
+        const lines = thoughtsTextarea.value.split('\n');
+        const lastEntry = lines.reverse().find(l => l.includes("AI INSIGHT:"));
+        if (lastEntry) {
+            const cleanText = lastEntry.replace("AI INSIGHT:", "").trim();
+            this.speak(cleanText);
+        }
+    }
+};
+
 const confirmPrompt = document.getElementById('ai-confirm-prompt');
 
-// 1. Detect when the user stops typing
+// 1. Specialized Input Listener (Detects typing pauses)
 thoughtsTextarea.addEventListener('input', () => {
     localStorage.setItem('aigham_thoughts_content', thoughtsTextarea.value);
     
-    // Reset timer every time they type
-    clearTimeout(aiDebounceTimer);
-    confirmPrompt.classList.add('hidden'); // Hide prompt while typing
+    // Reset timer to prevent prompt from showing while typing
+    clearTimeout(FloatingThoughtAI.aiDebounceTimer);
+    confirmPrompt.classList.add('hidden'); 
 
-    // If they stop for 3 seconds, ask if they are done
     if (thoughtsTextarea.value.trim().length > 15) {
-        aiDebounceTimer = setTimeout(() => {
+        FloatingThoughtAI.aiDebounceTimer = setTimeout(() => {
             confirmPrompt.classList.remove('hidden');
         }, 3000); 
     }
 });
 
-// 2. Function if they click "No"
+// 2. Specialized Click Controller (Single = Pause, Double = Restart)
+thoughtsTextarea.addEventListener('click', () => {
+    if (FloatingThoughtAI.clickTimer === null) {
+        // Single Click detected: Wait for second click
+        FloatingThoughtAI.clickTimer = setTimeout(() => {
+            if (FloatingThoughtAI.synth.speaking) {
+                FloatingThoughtAI.synth.paused ? FloatingThoughtAI.synth.resume() : FloatingThoughtAI.synth.pause();
+            }
+            FloatingThoughtAI.clickTimer = null;
+        }, 300); 
+    } else {
+        // Double Click detected: Cancel pause and restart speech
+        clearTimeout(FloatingThoughtAI.clickTimer);
+        FloatingThoughtAI.clickTimer = null;
+        FloatingThoughtAI.restartSpeech();
+    }
+});
+
+// 3. Function if they click "No" (Still typing)
 function cancelAIPrompt() {
     confirmPrompt.classList.add('hidden');
-    clearTimeout(aiDebounceTimer);
+    clearTimeout(FloatingThoughtAI.aiDebounceTimer);
 }
 
-// 3. The AI Response Function (Appends to Textarea)
+// 4. The Main AI Dialogue Function
 async function triggerAIResponse() {
     confirmPrompt.classList.add('hidden');
     const userText = thoughtsTextarea.value.trim();
 
-    if (typeof puter !== 'undefined') {
+    if (typeof puter !== 'undefined' && puter.ai?.chat) {
         try {
-            // Visual indicator that AI is "thinking"
             const originalVal = thoughtsTextarea.value;
+            // Visual feedback in the terminal/textarea
             thoughtsTextarea.value += "\n\n[SYSTEM: ANALYZING INPUT...]";
             thoughtsTextarea.scrollTop = thoughtsTextarea.scrollHeight;
 
@@ -4036,22 +4080,26 @@ async function triggerAIResponse() {
 
             const aiText = response?.message?.content || response;
             
-            // Clean up the "Analyzing" text and append the real response
-            thoughtsTextarea.value = originalVal + `\n\n${aiText}\n\n`;
+            // Clean up the placeholder and append real response
+            const responseWithSpacing = `\n\n${aiText}\n\n`;
+            thoughtsTextarea.value = originalVal + responseWithSpacing;
             
-            // Save the new combined state
+            // Trigger Speech Synthesis
+            const speechContent = aiText.replace("AI INSIGHT:", "").trim();
+            FloatingThoughtAI.speak(speechContent);
+
+            // Sync and Scroll
             localStorage.setItem('aigham_thoughts_content', thoughtsTextarea.value);
-            
-            // Auto-scroll to bottom
             thoughtsTextarea.scrollTop = thoughtsTextarea.scrollHeight;
 
         } catch (err) {
-            console.error("AI Debate failed", err);
-            thoughtsTextarea.value += "\n\n[Error: Neural link interrupted.]";
+            console.error("Thought AI Debate failed", err);
+            thoughtsTextarea.value += "\n\n[Error: Neural link interrupted. Check connection.]";
         }
     }
 }
 
+ 
  
   
 /* --- TIMER & ENHANCED SPEECH LOGIC --- */
