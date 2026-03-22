@@ -4005,12 +4005,10 @@ function resetElementsGame() {
 }
     
       
-      function closeMolLab() {
+      function closeMolecularLab() {
     document.getElementById('molecularLabModal').classList.add('hidden');
     document.getElementById('molecularLabModal').classList.remove('flex');
 }
-
-// --- Molecular Logic ---
 
 // ============================================
 // MOLECULAR LAB - COMPLETE FIXED CODE
@@ -4021,24 +4019,24 @@ let molCurrentLvl = 1;
 let molSequence = [];
 let currentAiSolution = ""; 
 let molAiTimer = null;
-let skillChatActive = false; // Required dependency
+let skillChatActive = false;
 
 // --- MOLECULAR LAB CORE FUNCTIONS ---
 
 /**
  * Initialize Molecular Lab with safety checks
  */
-function initMolLab() {
+function initMolecularLab() {
     // Verify all required DOM elements exist
-    const requiredElements = ['mol-status', 'mol-workbench', 'mol-task-name', 'mol-task-hint', 'mol-level'];
+    const requiredElements = ['mol-status', 'mol-workbench', 'mol-task-name', 'mol-task-hint', 'mol-level', 'element-grid'];
     const missing = requiredElements.filter(id => !document.getElementById(id));
     
     if (missing.length > 0) {
         console.error('Molecular Lab missing elements:', missing);
-        // Create fallback message in modal if elements missing
-        const modal = document.getElementById('molecularLabModal');
-        if (modal) {
-            modal.innerHTML = `<div class="p-6 text-red-400">Error: Molecular Lab UI components missing. Please refresh.</div>`;
+        const status = document.getElementById('mol-status');
+        if (status) {
+            status.style.color = "#f87171";
+            status.innerText = "⚠️ UI Error: Missing components";
         }
         return;
     }
@@ -4051,7 +4049,14 @@ function initMolLab() {
     // Clear workbench
     const workbench = document.getElementById('mol-workbench');
     if (workbench) {
-        workbench.innerHTML = '<span class="text-sm text-gray-500 italic">Select atoms/bonds...</span>';
+        workbench.innerHTML = '<span class="text-sm text-gray-500 italic">Drop elements to build...</span>';
+    }
+    
+    // Clear status
+    const status = document.getElementById('mol-status');
+    if (status) {
+        status.innerText = "";
+        status.className = "mt-4 p-3 rounded-lg text-center font-medium empty:hidden";
     }
     
     // Generate first molecule
@@ -4068,9 +4073,9 @@ async function generateAiMolecule(isRetry = false) {
     const taskHint = document.getElementById('mol-task-hint');
     const levelDisplay = document.getElementById('mol-level');
     
-    // Guard clauses - exit if elements missing
+    // Guard clauses - exit if critical elements missing
     if (!status || !workbench || !taskName || !taskHint || !levelDisplay) {
-        console.error('Molecular Lab: Required DOM elements not found');
+        console.error('Molecular Lab: Critical DOM elements not found');
         return;
     }
     
@@ -4083,11 +4088,12 @@ async function generateAiMolecule(isRetry = false) {
     if (typeof puter === 'undefined' || !puter.ai || !puter.ai.chat) {
         status.style.color = "#f87171";
         status.innerText = "⚠️ AI SYSTEM OFFLINE";
-        workbench.innerHTML = '<span class="text-red-400">System unavailable. Please refresh.</span>';
+        workbench.innerHTML = '<span class="text-red-400">System unavailable. Using fallback.</span>';
         
         // Load fallback
         taskName.innerText = "Water (H2O)";
         taskHint.innerText = "Two hydrogens, one oxygen";
+        levelDisplay.innerText = "Level 1/5";
         currentAiSolution = "H-O-H";
         resetMolWork();
         return;
@@ -4103,7 +4109,7 @@ async function generateAiMolecule(isRetry = false) {
             "hint": Structural hint, 
             "solution": Sequence (use - for single, = for double, ≡ for triple).
             Example: {"name": "Acetylene", "hint": "Two carbons triple bonded", "solution": "H-C≡C-H"}`,
-            { model: 'gemini-2.0-flash' } // Specify model for consistency
+            { model: 'gemini-2.0-flash' }
         );
         
         // Parse response safely
@@ -4121,7 +4127,7 @@ async function generateAiMolecule(isRetry = false) {
             
             data = JSON.parse(cleanJson);
         } catch (parseError) {
-            console.error('JSON parse error:', parseError);
+            console.error('JSON parse error:', parseError, 'Raw:', response);
             throw new Error('Invalid JSON format from AI');
         }
         
@@ -4133,7 +4139,7 @@ async function generateAiMolecule(isRetry = false) {
         // Update displays
         taskName.innerText = data.name;
         taskHint.innerText = data.hint;
-        levelDisplay.innerText = `Simulation: ${molCurrentLvl}`;
+        levelDisplay.innerText = `Level ${molCurrentLvl}/5`;
         currentAiSolution = data.solution;
         
         resetMolWork();
@@ -4143,11 +4149,12 @@ async function generateAiMolecule(isRetry = false) {
     } catch (err) {
         console.error("Synthesis Error:", err);
         status.style.color = "#f87171";
-        status.innerText = "⚠️ DATABASE ERROR: Loading Water as fallback.";
+        status.innerText = "⚠️ DATABASE ERROR: Loading fallback.";
         
         // Fallback safety
         taskName.innerText = "Water (H2O)";
         taskHint.innerText = "Two hydrogens, one oxygen";
+        levelDisplay.innerText = `Level ${molCurrentLvl}/5`;
         currentAiSolution = "H-O-H";
         resetMolWork();
     }
@@ -4204,7 +4211,7 @@ function renderMol() {
     if (!view) return;
     
     if (molSequence.length === 0) {
-        view.innerHTML = '<span class="text-sm text-gray-500 italic">Select atoms/bonds...</span>';
+        view.innerHTML = '<span class="text-sm text-gray-500 italic">Drop elements to build...</span>';
         return;
     }
     
