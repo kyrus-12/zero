@@ -4176,35 +4176,6 @@ const GEMINI_COOLDOWN = 1500; // ms
                   5:{content:'<p>Expert: discuss relativity & quantum</p>'}},
       },
       skill: {
-        physics: {
-           1: {
-              questions: [
-                { q: 'What unit measures force?', a: 'newton' },
-                { q: 'What is Newtons first law in a single word?', a: 'Inertia' },
-                { q: 'What is the relationship between velocity and acceleration if an object is slowing down?', a: 'They are in opposite directions' },
-                { q: 'A car travels 100km in 2 hours. What is its average speed?', a: '50 km/h' },
-                { q: 'What is the difference between speed and velocity?', a: 'Velocity includes direction' }
-              ]
-           },
-           2: {
-              questions: [
-                { q: 'A 10kg block is pushed by 50N. What is the acceleration?', a: '5 m/s²' },
-                { q: 'Calculate the force required to accelerate a 5kg mass at 3 m/s².', a: '15 N' },
-                { q: 'If you double the mass while keeping the force constant, what happens to the acceleration?', a: 'It is halved' }
-              ]
-           },
-           3: {
-              questions: [
-                { q: 'Is constant speed always zero net force? (yes/no)', a: 'no' },
-                { q: 'Explain why a feather falls slower than a hammer on Earth but at the same rate on the Moon.', a: 'Air resistance is present on Earth but absent on the Moon' },
-                { q: 'Evaluate the statement: "An object is moving, so there must be a net force acting on it."', a: 'False, it could be moving at constant velocity, meaning net force is zero' }
-              ]
-           },
-           4: {
-              type: 'guided_project',
-              initial_prompt: 'Welcome to the Create & Innovate studio! You have reached the highest skill level. Your challenge is to design a project that applies concepts from Physics to solve a real-world problem. **What specific problem do you want to address, and what is your initial project idea?** I\'m ready to help you brainstorm and refine your plan.'
-           }
-      },
       chemistry: {
            1: {
               questions: [
@@ -4569,44 +4540,6 @@ const GEMINI_COOLDOWN = 1500; // ms
   
         
  const dynamicContent = {
-  physics: {
-    1: {
-      'motion': {
-        title: 'Level 1: Introduction to Motion',
-        modules: [
-          { type: 'text', heading: 'The Concept of Relative Motion', body: 'Motion is always measured against a background or reference point.' },
-          { type: 'image', url: 'https://i.imgur.com/8m5XfHn.gif', caption: 'Imgur: 1D Kinematics' }
-        ]
-      }
-    },
-    2: {
-      'thermodynamics': {
-        title: 'Level 2: Heat and Matter',
-        modules: [
-          { type: 'text', heading: 'Laws of Thermodynamics', body: 'Energy cannot be created or destroyed, only transformed. Heat flows from hot to cold.' },
-          { type: 'image', url: 'https://i.imgur.com/HEAT_TRANSFER.png', caption: 'Imgur: Conduction, Convection, Radiation' }
-        ]
-      }
-    },
-    3: {
-      'force': {
-        title: 'Level 3: Dynamics and Forces',
-        modules: [
-          { type: 'text', heading: 'Newtonian Laws', body: 'Force is an interaction that changes the motion of an object (F=ma).' },
-          { type: 'image', url: 'https://i.imgur.com/FORCE_DIAGRAM.png', caption: 'Imgur: Free Body Diagram' },
-          { type: 'video', url: 'https://player.vimeo.com/video/VIMEO_ID_1', source: 'vimeo', title: 'Forces Tutorial' }
-        ]
-      },
-      'energy': {
-        title: 'Level 3: Work, Power, and Energy',
-        modules: [
-          { type: 'text', heading: 'Energy Conservation', body: 'Energy transitions from Potential to Kinetic but is never lost.' },
-          { type: 'image', url: 'https://i.imgur.com/ENERGY_CHART.png', caption: 'Imgur: Energy Transformation' },
-          { type: 'video', url: 'https://player.vimeo.com/video/VIMEO_ID_2', source: 'vimeo', title: 'Energy Systems' }
-        ]
-      }
-    }
-  },
   chemistry: {
     1: {
       'use of models': {
@@ -4919,38 +4852,6 @@ const GEMINI_COOLDOWN = 1500; // ms
         ]
       }
     }
-  },
-    
-          
-    
-  biology: {
-    1: {
-      'cells': {
-        title: 'Level 1: Cell Biology',
-        modules: [
-          { type: 'text', heading: 'The Basic Unit of Life', body: 'Cells are the smallest functional units of living organisms.' },
-          { type: 'image', url: 'https://i.imgur.com/CELL_BIO.png', caption: 'Imgur: Plant vs Animal Cells' }
-        ]
-      }
-    },
-    2: {
-      'genetics': {
-        title: 'Level 2: Genetics and DNA',
-        modules: [
-          { type: 'text', heading: 'Heredity', body: 'DNA carries genetic information passed from parents to offspring.' },
-          { type: 'image', url: 'https://i.imgur.com/DNA_STRAND.png', caption: 'Imgur: Double Helix Structure' }
-        ]
-      }
-    },
-    3: {
-      'ecosystems': {
-        title: 'Level 3: Ecology',
-        modules: [
-          { type: 'text', heading: 'Energy Flow', body: 'Studying how energy moves through food webs and trophic levels.' },
-          { type: 'video', url: 'https://player.vimeo.com/video/ECO_1', source: 'vimeo', title: 'Ecosystem Dynamics' }
-        ]
-      }
-    }
   }
 };
   
@@ -5097,7 +4998,7 @@ const GEMINI_COOLDOWN = 1500; // ms
   container.innerHTML = '';
   
   // 1. Add padding-bottom to the container class list so it clears the footer
-  container.className = "hidden grid grid-cols-2 md:grid-cols-5 gap-4 pb-24";
+  container.className = "hidden grid grid-cols-2 md:grid-cols-2 gap-4 pb-24";
 
   proficiencyLevels.forEach(p => {
     const div = document.createElement('div');
