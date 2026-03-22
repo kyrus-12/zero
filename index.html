@@ -5076,8 +5076,8 @@ const GEMINI_COOLDOWN = 1500; // ms
     
     // 3. Keep the title bold and the description readable
     div.innerHTML = `
-      <h4 class="text-3xl font-bold text-blue-100">${s.title}</h4>
-      <p class="text-2xl text-gray-400 mt-2 leading-relaxed">${s.description}</p>
+      <h4 class="text-2xl font-bold text-blue-100">${s.title}</h4>
+      <p class="text-1xl text-gray-400 mt-2 leading-relaxed">${s.description}</p>
     `;
     
     div.onclick = () => { handleSubtopicClick(s.id) };
@@ -5108,8 +5108,8 @@ const GEMINI_COOLDOWN = 1500; // ms
     
     // 3. Cleaned up the innerHTML for better spacing
     div.innerHTML = `
-      <div class="text-3xl font-bold text-blue-100 leading-none">${p.level}</div>
-      <div class="text-2xl uppercase tracking-wide text-gray-400 mt-1">${p.descriptor}</div>
+      <div class="text-2xl font-bold text-blue-100 leading-none">${p.level}</div>
+      <div class="text-1xl uppercase tracking-wide text-gray-400 mt-1">${p.descriptor}</div>
     `;
     
     div.onclick = () => handleProficiencyClick(p.level);
@@ -5139,8 +5139,8 @@ function populateSkillLevels() {
     
     // Using <div> tags to force the "Level X" above the description
     div.innerHTML = `
-      <div class="text-3xs uppercase tracking-widest text-blue-400 font-semibold">Level ${s.level}</div>
-      <div class="text-2xl md:text-base text-gray-200 mt-1 font-medium">${s.label}</div>
+      <div class="text-2xl uppercase tracking-widest text-blue-400 font-semibold">Level ${s.level}</div>
+      <div class="text-1xl md:text-base text-gray-200 mt-1 font-medium">${s.label}</div>
     `;
     
     div.onclick = () => handleSkillClick(s.level);
