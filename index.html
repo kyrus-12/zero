@@ -5057,55 +5057,102 @@ const GEMINI_COOLDOWN = 1500; // ms
       if(currentStep===4){ show(document.getElementById('step-4')) }
     }
 
-    /* populate functions with animation/stagger */
-    function populateSubtopics(){
-      const container = document.getElementById('step-1');
-      container.innerHTML='';
-      const topic = topics.find(t=>t.id===selectedTopic);
-      if(!topic) return;
-      topic.subtopics.forEach((s, i)=>{
-        const div = document.createElement('div');
-        div.className='card p-4 cursor-pointer';
-        div.tabIndex = 0;
-        div.innerHTML = `<h4 class="text-lg font-semibold text-blue-100">${s.title}</h4><p class="text-sm text-gray-400 mt-1">${s.description}</p>`;
-        div.onclick = ()=>{ handleSubtopicClick(s.id) };
-        div.onkeypress = (e)=>{ if(e.key==='Enter') handleSubtopicClick(s.id) };
-        container.appendChild(div);
-      });
-      // stagger show
-      setTimeout(()=>container.classList.add('show'),40);
-      container.classList.add('stagger'); container.classList.add('show');
-    }
+ function populateSubtopics() {
+  const container = document.getElementById('step-1');
+  container.innerHTML = '';
+  
+  const topic = topics.find(t => t.id === selectedTopic);
+  if (!topic) return;
 
-    function populateProficiencyLevels(){
-      const container = document.getElementById('step-3a');
-      container.innerHTML='';
-      proficiencyLevels.forEach(p=>{
-        const div = document.createElement('div');
-        div.className = 'card p-3 text-center cursor-pointer';
-        div.tabIndex = 0;
-        div.innerHTML = `<div class="text-xl font-bold text-blue-100">${p.level}</div><div class="text-sm text-gray-300">${p.descriptor}</div>`;
-        div.onclick = ()=> handleProficiencyClick(p.level);
-        div.onkeypress = (e)=>{ if(e.key==='Enter') handleProficiencyClick(p.level) };
-        container.appendChild(div);
-      });
-      setTimeout(()=>container.classList.add('show'),40); container.classList.add('stagger');
-    }
+  // 1. Force the container to stay ABOVE the footer and allow scrolling
+  container.className = "hidden grid grid-cols-1 md:grid-cols-3 gap-4 pb-28 max-h-[70vh] overflow-y-auto px-2";
 
-    function populateSkillLevels(){
-      const container = document.getElementById('step-3b');
-      container.innerHTML='';
-      skillLevels.forEach(s=>{
-        const div = document.createElement('div');
-        div.className='card p-3 text-center cursor-pointer';
-        div.tabIndex=0;
-        div.innerHTML = `<div class="text-lg font-bold text-blue-100">Level ${s.level}</div><div class="text-sm text-gray-300">${s.label}</div>`;
-        div.onclick = ()=> handleSkillClick(s.level);
-        div.onkeypress = (e)=>{ if(e.key==='Enter') handleSkillClick(s.level) };
-        container.appendChild(div);
-      });
-      setTimeout(()=>container.classList.add('show'),40); container.classList.add('stagger');
-    }
+  topic.subtopics.forEach((s, i) => {
+    const div = document.createElement('div');
+    
+    // 2. Add flex-col and min-height so short descriptions don't make cards look uneven
+    div.className = 'card p-5 cursor-pointer flex flex-col justify-start hover:border-blue-400 transition-all min-h-[120px]';
+    div.tabIndex = 0;
+    
+    // 3. Keep the title bold and the description readable
+    div.innerHTML = `
+      <h4 class="text-xl font-bold text-blue-100">${s.title}</h4>
+      <p class="text-sm text-gray-400 mt-2 leading-relaxed">${s.description}</p>
+    `;
+    
+    div.onclick = () => { handleSubtopicClick(s.id) };
+    div.onkeypress = (e) => { if (e.key === 'Enter') handleSubtopicClick(s.id) };
+    
+    container.appendChild(div);
+  });
+
+  // stagger show
+  setTimeout(() => container.classList.add('show'), 40);
+  container.classList.add('stagger');
+  container.classList.add('show');
+}
+
+   function populateProficiencyLevels() {
+  const container = document.getElementById('step-3a');
+  container.innerHTML = '';
+  
+  // 1. Add padding-bottom to the container class list so it clears the footer
+  container.className = "hidden grid grid-cols-2 md:grid-cols-5 gap-4 pb-24";
+
+  proficiencyLevels.forEach(p => {
+    const div = document.createElement('div');
+    
+    // 2. Added flex-col and items-center to ensure vertical stacking
+    div.className = 'card p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-transform hover:scale-105';
+    div.tabIndex = 0;
+    
+    // 3. Cleaned up the innerHTML for better spacing
+    div.innerHTML = `
+      <div class="text-2xl font-bold text-blue-100 leading-none">${p.level}</div>
+      <div class="text-xs uppercase tracking-wide text-gray-400 mt-1">${p.descriptor}</div>
+    `;
+    
+    div.onclick = () => handleProficiencyClick(p.level);
+    div.onkeypress = (e) => { if (e.key === 'Enter') handleProficiencyClick(p.level) };
+    
+    container.appendChild(div);
+  });
+
+  setTimeout(() => container.classList.add('show'), 40);
+  container.classList.add('stagger');
+}
+
+ 
+function populateSkillLevels() {
+  const container = document.getElementById('step-3b');
+  container.innerHTML = '';
+  
+  // Ensure the container has bottom padding so it doesn't hide behind the footer
+  container.className = "hidden grid grid-cols-1 md:grid-cols-2 gap-4 pb-24";
+
+  skillLevels.forEach(s => {
+    const div = document.createElement('div');
+    
+    // Added flex-col to stack Level and Label, and h-full to make cards uniform
+    div.className = 'card p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-blue-900/20';
+    div.tabIndex = 0;
+    
+    // Using <div> tags to force the "Level X" above the description
+    div.innerHTML = `
+      <div class="text-xs uppercase tracking-widest text-blue-400 font-semibold">Level ${s.level}</div>
+      <div class="text-sm md:text-base text-gray-200 mt-1 font-medium">${s.label}</div>
+    `;
+    
+    div.onclick = () => handleSkillClick(s.level);
+    div.onkeypress = (e) => { if (e.key === 'Enter') handleSkillClick(s.level) };
+    
+    container.appendChild(div);
+  });
+
+  setTimeout(() => container.classList.add('show'), 40);
+  container.classList.add('stagger');
+}
+ 
 
     /* === click handlers === */
     document.getElementById('topic-science').addEventListener('click', ()=>{ handleTopicClick('science') });
