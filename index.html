@@ -409,6 +409,18 @@ body.theme-nature {
   backdrop-filter: blur(15px);
   border: 1px solid rgba(96, 165, 250, 0.3);
 }
+
+    /*Molecular Lab*/
+
+atom-symbol {
+    @apply bg-amber-500 text-black font-bold px-3 py-1 rounded-md mx-1 shadow-sm;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+.bond-symbol {
+    @apply text-indigo-400 font-black text-2xl mx-1 self-center;
+    text-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+}
   
 /* Custom utility classes since we're using Tailwind components */
     .btn-num { @apply p-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all text-sm font-medium; }
