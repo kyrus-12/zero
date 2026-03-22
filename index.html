@@ -4045,38 +4045,39 @@ thoughtsTextarea.addEventListener('input', () => {
     }
 });
 
-thoughtsTextarea.addEventListener('touchstart', (e) => {
-    if (e.touches.length > 1) return; // Allow multi-touch pinch
-}, { passive: true });
-
-// 2. 🟢 CLICK LOGIC (1 Click: Pause/Resume | 2 Clicks: Restart)
-thoughtsTextarea.addEventListener('click', () => {
-    if (FloatingThoughtAI.clickTimer === null) {
-        // First click detected: Start a timer to wait for a second click
-        FloatingThoughtAI.clickTimer = setTimeout(() => {
-            // --- SINGLE CLICK ACTION (Pause / Resume) ---
-            if (FloatingThoughtAI.synth.speaking) {
-                if (FloatingThoughtAI.synth.paused) {
-                    FloatingThoughtAI.synth.resume();
-                    console.log("AI Speech Resumed");
-                } else {
-                    FloatingThoughtAI.synth.pause();
-                    console.log("AI Speech Paused");
-                }
-            }
-            // Reset timer after executing single click
-            FloatingThoughtAI.clickTimer = null;
-        }, 300); // 300ms window is the "sweet spot" for human fingers
-        
-    } else {
-        // --- DOUBLE CLICK ACTION (Restart) ---
-        // Second click arrived within 300ms, so cancel the single-click timer
+ thoughtsTextarea.addEventListener('click', () => {
+    // Check if the timer is already running (this indicates a potential double-click)
+    if (FloatingThoughtAI.clickTimer !== null) {
+        // --- DOUBLE CLICK ACTION (RESTART) ---
         clearTimeout(FloatingThoughtAI.clickTimer);
         FloatingThoughtAI.clickTimer = null;
         
-        console.log("AI Speech Restarting...");
+        console.log("AI Speech: RESTARTING");
         FloatingThoughtAI.restartSpeech();
+        return; // Exit to prevent the single-click logic from firing
     }
+
+    // Start the timer for a single click
+    FloatingThoughtAI.clickTimer = setTimeout(() => {
+        // --- SINGLE CLICK ACTION (PAUSE / RESUME TOGGLE) ---
+        const synth = FloatingThoughtAI.synth;
+
+        if (synth.speaking) {
+            if (synth.paused) {
+                synth.resume();
+                console.log("AI Speech: RESUMED");
+            } else {
+                synth.pause();
+                console.log("AI Speech: PAUSED");
+            }
+        } else {
+            // OPTIONAL: If nothing is speaking, a click could also trigger a restart
+            console.log("System idle. Double-tap to replay recent analysis.");
+        }
+
+        // Reset the timer after the 300ms window closes
+        FloatingThoughtAI.clickTimer = null;
+    }, 300); 
 });
 
 // 3. Function if they click "No" (Still typing)
