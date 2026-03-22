@@ -447,6 +447,25 @@ body.theme-nature {
     justify-content: center;
     text-align: center;
 }
+
+ /* Force smaller buttons in Step 3a and 3b */
+#step-3a > div, 
+#step-3b > div {
+  padding: 0.75rem !important; /* Smaller internal space */
+  min-height: 120px !important;  /* Shorter height */
+  font-size:3rem !important; /* Smaller text */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Add a scroll limit so it never overlaps the footer */
+#step-3a, #step-3b {
+  max-height: 50vh; /* Only take up half the screen max */
+  overflow-y: auto; /* Scroll if there are too many buttons */
+  padding: 10px;    /* Space for the scrollbar */
+}
    
     /* Elements Lab Styles */
 .periodic-grid {
@@ -1301,10 +1320,10 @@ footer.global-nav {
 </div>
     
 <!-- STEP 3A: Proficiency (descriptor 1-5) -->
-<div class="hidden grid grid-cols-2 md:grid-cols-5 gap-4" id="step-3a"></div>
+<div class="hidden grid grid-cols-2 md:grid-cols-2 gap-4" id="step-3a"></div>
     
 <!-- STEP 3B: Skill levels (1-4) -->
-<div class="hidden grid grid-cols-2 md:grid-cols-4 gap-4" id="step-3b"></div>
+<div class="hidden grid grid-cols-2 md:grid-cols-2 gap-4" id="step-3b"></div>
     
 <!-- STEP 4: Chat -->
 <div class="hidden" id="step-4">
