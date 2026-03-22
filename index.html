@@ -3701,17 +3701,27 @@ function getElPos(n) {
 // Global cache for element facts to save API calls
 const elementFactCache = new Map();
 
-// --- SPECIALIZED ELEMENT SPEECH CONTROLLER ---
+
+// --- 🧪 SPECIALIZED ELEMENT SPEECH CONTROLLER ---
 const ElementSpeechAI = {
     synth: window.speechSynthesis,
     currentUtterance: null,
 
     speak: function(text) {
-        this.synth.cancel(); // Stop any current element speech
-        this.currentUtterance = new SpeechSynthesisUtterance(text);
-        this.currentUtterance.rate = 1.0;
-        this.currentUtterance.pitch = 1.05; // Slightly unique pitch for the Lab
-        this.synth.speak(this.currentUtterance);
+        // 1. Force stop any current speech
+        this.synth.cancel(); 
+
+        // 2. Small delay (50ms) ensures the browser clears the queue before new speech
+        setTimeout(() => {
+            this.currentUtterance = new SpeechSynthesisUtterance(text);
+            this.currentUtterance.rate = 1.0;
+            this.currentUtterance.pitch = 1.05;
+            
+            // Handle potential errors (like voices not loading)
+            this.currentUtterance.onerror = (e) => console.error("TTS Error:", e);
+            
+            this.synth.speak(this.currentUtterance);
+        }, 50); 
     }
 };
 
@@ -3734,16 +3744,12 @@ function initElementsLab() {
                 const mass = labMasses[i-1];
                 const neutrons = Math.round(mass - i);
                 const group = groupName.toUpperCase();
-                
                 const article = ["A", "E", "I", "O", "U"].includes(group[0]) ? "an" : "a";
 
                 if(elPCount === i && elECount === i) {
                     div.classList.add('revealed');
                     msg.className = "text-green-400 font-mono text-sm tracking-tight leading-relaxed uppercase";
-                    
-                    msg.innerHTML = `
-                        <span class="text-white animate-pulse">ANALYZING SPECIMEN: ${name.toUpperCase()}...</span>
-                    `;
+                    msg.innerHTML = `<span class="text-white animate-pulse">ANALYZING SPECIMEN: ${name.toUpperCase()}...</span>`;
 
                     try {
                         let aiData = { fact: "", curiosity: "", reflection: "" };
@@ -3758,22 +3764,18 @@ function initElementsLab() {
                                 3. A deep reflective question for the user. 
                                 Keep it simple and scientific yet engaging.`
                             );
-                            
                             const rawContent = response?.message?.content || response;
                             const parts = rawContent.split('|');
-                            
                             aiData = {
                                 fact: parts[0]?.trim() || "Commonly used in various industrial applications.",
                                 curiosity: parts[1]?.trim() || `What would happen to our tech if ${name} vanished?`,
                                 reflection: parts[2]?.trim() || `How does the structure of ${symbol} reflect the order of the universe?`
                             };
-                            
                             elementFactCache.set(symbol, aiData);
                         }
 
-                        // 🟢 TRIGGER SPECIALIZED SPEECH
-                        // Reads the Name, Fact, and Curiosity question
-                        const combinedText = `${name}. ${aiData.fact} ${aiData.curiosity}`;
+                        // 🟢 SPEECH: Combined Feedback
+                        const combinedText = `${name}. ${aiData.fact} ${aiData.curiosity} ${aiData.reflection}`;
                         ElementSpeechAI.speak(combinedText);
 
                         msg.innerHTML = `
@@ -3784,17 +3786,14 @@ function initElementsLab() {
                                     <strong class="text-white underline">${name} (${symbol})</strong>, 
                                     categorized as ${article} <strong class="text-emerald-300 italic">${group}</strong>.
                                 </div>
-
                                 <div class="flex gap-4 font-mono text-xs border-y border-white/10 py-1">
                                     <span class="text-blue-400">P: ${elPCount}</span>
                                     <span class="text-yellow-300">N: ${neutrons}</span>
                                     <span class="text-red-400">E: ${elECount}</span>
                                 </div>
-
                                 <div class="mt-2 p-2 bg-white/5 border-l-2 border-emerald-500 normal-case text-emerald-100 italic text-sm">
                                     <b class="text-emerald-400 uppercase text-[10px] not-italic tracking-tighter">Real-World:</b> ${aiData.fact}
                                 </div>
-
                                 <div class="grid gap-2 text-xs">
                                     <div class="p-2 rounded bg-blue-500/5 border border-blue-500/20">
                                         <span class="text-blue-400 font-bold uppercase text-[9px]">Curiosity Inquiry</span>
@@ -3805,20 +3804,20 @@ function initElementsLab() {
                                         <p class="text-purple-100 leading-tight mt-1">${aiData.reflection}</p>
                                     </div>
                                 </div>
-
-                                <div class="pt-2 text-center">
-                                    <p class="text-emerald-400 font-black italic tracking-widest text-[11px] uppercase animate-pulse">
-                                        Analyze. Discover. Learn, Learn, and Learn!
-                                    </p>
-                                </div>
                             </div>
                         `;
                     } catch (err) {
                         console.warn("AI Analysis failed", err);
+                        const errorMsg = `Identified ${name}. Analysis incomplete.`;
+                        ElementSpeechAI.speak(errorMsg); // Speak the error too
                         msg.innerHTML = `<span class="text-white">IDENTIFIED: ${name}</span>. Analysis incomplete.`;
                     }
 
                 } else {
+                    // 🟢 SPEECH: Error Feedback
+                    const errorText = `Identification Error. Target cell ${name} requires ${i} protons. System is currently at ${elPCount} protons.`;
+                    ElementSpeechAI.speak(errorText);
+
                     msg.className = "text-red-400 font-mono text-sm uppercase";
                     msg.innerHTML = `<strong>Identification Error:</strong> Targeted cell <strong>${name}</strong> 
                                     requires ${i} protons/electrons. Current system state: P:${elPCount}, E:${elECount}.`;
@@ -3828,8 +3827,6 @@ function initElementsLab() {
         }
     }
 }
-      
-
 
     function updateElementsLab(dp, de) {
     elPCount = Math.max(0, elPCount + dp); 
