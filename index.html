@@ -4012,56 +4012,134 @@ function resetElementsGame() {
 
 // --- Molecular Logic ---
 
-// --- GLOBAL STATE ---
+// ============================================
+// MOLECULAR LAB - COMPLETE FIXED CODE
+// ============================================
+
+// --- GLOBAL STATE (Must be at top of script) ---
 let molCurrentLvl = 1; 
 let molSequence = [];
 let currentAiSolution = ""; 
 let molAiTimer = null;
+let skillChatActive = false; // Required dependency
 
+// --- MOLECULAR LAB CORE FUNCTIONS ---
 
-    async function generateAiMolecule(isRetry = false) {
+/**
+ * Initialize Molecular Lab with safety checks
+ */
+function initMolLab() {
+    // Verify all required DOM elements exist
+    const requiredElements = ['mol-status', 'mol-workbench', 'mol-task-name', 'mol-task-hint', 'mol-level'];
+    const missing = requiredElements.filter(id => !document.getElementById(id));
+    
+    if (missing.length > 0) {
+        console.error('Molecular Lab missing elements:', missing);
+        // Create fallback message in modal if elements missing
+        const modal = document.getElementById('molecularLabModal');
+        if (modal) {
+            modal.innerHTML = `<div class="p-6 text-red-400">Error: Molecular Lab UI components missing. Please refresh.</div>`;
+        }
+        return;
+    }
+    
+    // Reset state
+    molCurrentLvl = 1;
+    molSequence = [];
+    currentAiSolution = "";
+    
+    // Clear workbench
+    const workbench = document.getElementById('mol-workbench');
+    if (workbench) {
+        workbench.innerHTML = '<span class="text-sm text-gray-500 italic">Select atoms/bonds...</span>';
+    }
+    
+    // Generate first molecule
+    generateAiMolecule(false);
+}
+
+/**
+ * Generate AI molecule with robust error handling
+ */
+async function generateAiMolecule(isRetry = false) {
     const status = document.getElementById('mol-status');
     const workbench = document.getElementById('mol-workbench');
     const taskName = document.getElementById('mol-task-name');
+    const taskHint = document.getElementById('mol-task-hint');
+    const levelDisplay = document.getElementById('mol-level');
     
-    // UI Feedback
+    // Guard clauses - exit if elements missing
+    if (!status || !workbench || !taskName || !taskHint || !levelDisplay) {
+        console.error('Molecular Lab: Required DOM elements not found');
+        return;
+    }
+    
+    // Update UI
     status.style.color = "#60a5fa";
     status.innerText = isRetry ? "🔄 STABILITY FAILED: REGENERATING..." : "📡 UPLINKING TO CHEMICAL DATABASE...";
     workbench.innerHTML = '<span class="animate-pulse text-blue-400">Synthesizing atomic structure...</span>';
-
+    
+    // Check if Puter.js is available
+    if (typeof puter === 'undefined' || !puter.ai || !puter.ai.chat) {
+        status.style.color = "#f87171";
+        status.innerText = "⚠️ AI SYSTEM OFFLINE";
+        workbench.innerHTML = '<span class="text-red-400">System unavailable. Please refresh.</span>';
+        
+        // Load fallback
+        taskName.innerText = "Water (H2O)";
+        taskHint.innerText = "Two hydrogens, one oxygen";
+        currentAiSolution = "H-O-H";
+        resetMolWork();
+        return;
+    }
+    
     try {
-        if (typeof puter === 'undefined') throw new Error("Puter Offline");
-
-        // The AI Call
+        // AI Call using Puter.js
         const response = await puter.ai.chat(
             `Generate a unique molecule for a chemistry game. 
             Level Complexity: ${molCurrentLvl}. 
             Return ONLY a JSON object with:
             "name": Common name,
-            "hint": Structural hint,
+            "hint": Structural hint, 
             "solution": Sequence (use - for single, = for double, ≡ for triple).
-            Example: {"name": "Acetylene", "hint": "Two carbons triple bonded", "solution": "H-C≡C-H"}`
+            Example: {"name": "Acetylene", "hint": "Two carbons triple bonded", "solution": "H-C≡C-H"}`,
+            { model: 'gemini-2.0-flash' } // Specify model for consistency
         );
-
-        // FIX 1: Use toString() to get the actual text from the Puter object
-        const rawContent = response.toString();
-
-        // FIX 2: Better RegEx to remove Markdown JSON blocks
-        const cleanJson = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
         
-        const data = JSON.parse(cleanJson);
+        // Parse response safely
+        let data;
+        try {
+            // Handle different response formats from Puter.js
+            const rawContent = typeof response === 'string' ? response : 
+                              (response?.message?.content || response?.text || JSON.stringify(response));
+            
+            // Clean JSON markers
+            const cleanJson = rawContent
+                .replace(/```json\s*/gi, "")
+                .replace(/```\s*/g, "")
+                .trim();
+            
+            data = JSON.parse(cleanJson);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            throw new Error('Invalid JSON format from AI');
+        }
         
-        // DOM Updates
+        // Validate data structure
+        if (!data.name || !data.hint || !data.solution) {
+            throw new Error('Incomplete data from AI');
+        }
+        
+        // Update displays
         taskName.innerText = data.name;
-        document.getElementById('mol-task-hint').innerText = data.hint;
-        document.getElementById('mol-level').innerText = `Simulation: ${molCurrentLvl}`;
-        
+        taskHint.innerText = data.hint;
+        levelDisplay.innerText = `Simulation: ${molCurrentLvl}`;
         currentAiSolution = data.solution;
-        resetMolWork();
         
+        resetMolWork();
         status.style.color = "#94a3b8";
         status.innerText = isRetry ? "⚠️ NEW MISSION ASSIGNED." : "✅ MOLECULE SYNTHESIZED.";
-
+        
     } catch (err) {
         console.error("Synthesis Error:", err);
         status.style.color = "#f87171";
@@ -4069,55 +4147,48 @@ let molAiTimer = null;
         
         // Fallback safety
         taskName.innerText = "Water (H2O)";
-        document.getElementById('mol-task-hint').innerText = "Two hydrogens, one oxygen";
+        taskHint.innerText = "Two hydrogens, one oxygen";
         currentAiSolution = "H-O-H";
         resetMolWork();
     }
 }
-    
 
 /**
- * AUTOMATED VALIDATION LOGIC
- * Correct: Advance Level + New Problem
- * Incorrect: Reset current Level + New Problem
+ * Validate user-built molecule
  */
 function validateMolecule() {
     const userStr = molSequence.map(s => s.val).join('');
     const status = document.getElementById('mol-status');
     
-    // Bidirectional validation
+    if (!status) return;
+    
+    // Create reversed solution for bidirectional check
     const reversed = currentAiSolution.split('').reverse().join('');
 
     if (userStr === currentAiSolution || userStr === reversed) {
-        // --- CASE: SUCCESS ---
+        // --- SUCCESS CASE ---
         status.style.color = "#4ade80";
         status.innerText = "⭐ STABLE! Leveling up...";
         
         setTimeout(() => {
             molCurrentLvl++;
-            generateAiMolecule(false); // Advance
+            generateAiMolecule(false);
         }, 2000);
     } else {
-        // --- CASE: FAILURE (AUTOMATION) ---
+        // --- FAILURE CASE ---
         status.style.color = "#f87171";
         status.innerText = "❌ UNSTABLE: Structure collapsed. Redirecting...";
         
-        // Automation: Don't let them sit on a broken problem.
-        // We wait 2 seconds so they can see their mistake, then wipe and regenerate.
         setTimeout(() => {
             resetMolWork();
-            generateAiMolecule(true); // Forced regeneration on failure
+            generateAiMolecule(true);
         }, 2000);
     }
 }
 
-    
-// --- CORE UTILITIES ---
-
-function initMolLab() {
-    generateAiMolecule(); 
-}
-
+/**
+ * Add atom or bond to molecule sequence
+ */
 function addMolInput(val, type) {
     if (molSequence.length < 15) {
         molSequence.push({ val, type });
@@ -4125,23 +4196,31 @@ function addMolInput(val, type) {
     }
 }
 
+/**
+ * Render molecule in workbench
+ */
 function renderMol() {
     const view = document.getElementById('mol-workbench');
+    if (!view) return;
+    
     if (molSequence.length === 0) {
         view.innerHTML = '<span class="text-sm text-gray-500 italic">Select atoms/bonds...</span>';
         return;
     }
+    
     view.innerHTML = molSequence.map(item => {
         const cssClass = item.type === 'atom' ? 'atom-symbol' : 'bond-symbol';
         return `<span class="${cssClass}">${item.val}</span>`;
     }).join('');
 }
 
+/**
+ * Reset molecule work area
+ */
 function resetMolWork() {
     molSequence = [];
     renderMol();
 }
-    
 
 
     
