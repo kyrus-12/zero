@@ -441,8 +441,9 @@ body.theme-nature {
 #step-3b button {
     min-height: 120px;    /* Force a specific height */
     padding: 10px;       /* Control internal spacing */
-    font-size: 3rem; /* Make text smaller if buttons are too big */
-    display: flex;
+    font-size: 3rem;/* Make text smaller if buttons are too big */
+   flex-direction: column;
+   display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
@@ -458,6 +459,7 @@ body.theme-nature {
   align-items: center;
   justify-content: center;
   text-align: center;
+ flex-direction: column;
 }
 
 /* Add a scroll limit so it never overlaps the footer */
