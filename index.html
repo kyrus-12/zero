@@ -1466,14 +1466,13 @@ footer.global-nav {
     <textarea id="persistent-thoughts" 
       class="w-full h-80 bg-blue-950/20 border border-blue-500/20 rounded-2xl p-5 text-blue-50 outline-none focus:border-blue-400/50 transition-all text-lg leading-relaxed placeholder:text-blue-900"
       placeholder="Capture your thoughts here... they will stay even if you refresh!"></textarea>
-    <div id="ai-thought-feedback" class="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hidden transition-all duration-500">
-        <div class="flex items-center gap-2 mb-1">
-            <span class="text-[10px] bg-emerald-500 text-black px-1.5 rounded font-black uppercase">AI Insight</span>
-            <span id="ai-status-pulse" class="text-[10px] text-emerald-400 font-mono animate-pulse">ANALYZING...</span>
+   
+    <div id="ai-confirm-prompt" class="mt-4 flex items-center justify-between p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl hidden">
+        <span class="text-xs text-blue-200 italic font-mono uppercase tracking-tighter">Analysis paused. Are you ready for AI insight?</span>
+        <div class="flex gap-2">
+            <button onclick="triggerAIResponse()" class="px-4 py-1 bg-emerald-500 text-black text-[10px] font-bold rounded uppercase hover:bg-emerald-400 transition-all">Yes, Respond</button>
+            <button onclick="cancelAIPrompt()" class="px-4 py-1 bg-white/10 text-white text-[10px] font-bold rounded uppercase hover:bg-white/20 transition-all">No, still typing</button>
         </div>
-        <p id="ai-feedback-text" class="text-xs text-emerald-100 italic leading-relaxed">
-            Reading your thoughts...
-        </p>
     </div>
    <div class="mt-6 flex justify-between items-center">
       <span class="text-[10px] text-blue-400/50 font-mono">AUTOSAVE: ENABLED</span>
@@ -3989,42 +3988,69 @@ function applyBrainSide(side) {
     }
 }
 
+
  let aiDebounceTimer;
-const feedbackContainer = document.getElementById('ai-thought-feedback');
-const feedbackText = document.getElementById('ai-feedback-text');
+const confirmPrompt = document.getElementById('ai-confirm-prompt');
 
+// 1. Detect when the user stops typing
 thoughtsTextarea.addEventListener('input', () => {
-    // 1. Existing Auto-save logic
     localStorage.setItem('aigham_thoughts_content', thoughtsTextarea.value);
-
-    // 2. Clear previous timer
+    
+    // Reset timer every time they type
     clearTimeout(aiDebounceTimer);
+    confirmPrompt.classList.add('hidden'); // Hide prompt while typing
 
-    // 3. Wait 2 seconds after typing stops to call AI
-    aiDebounceTimer = setTimeout(async () => {
-        const content = thoughtsTextarea.value.trim();
-        
-        // Only trigger if there's enough content to analyze
-        if (content.length > 10 && typeof puter !== 'undefined') {
-            try {
-                feedbackContainer.classList.remove('hidden');
-                feedbackText.innerText = "Processing your insight...";
-
-                const response = await puter.ai.chat(
-                    `The user is writing notes about science and elements. 
-                    Based on this text: "${content}", provide a short (one-sentence) 
-                    encouragement or a deep reflective question to help them learn more. 
-                    Keep it simple, supportive and intellectual.`
-                );
-
-                const aiResponse = response?.message?.content || response;
-                feedbackText.innerText = aiResponse;
-            } catch (err) {
-                console.warn("Puter AI Feedback failed", err);
-            }
-        }
-    }, 2000); // 2000ms pause required
+    // If they stop for 3 seconds, ask if they are done
+    if (thoughtsTextarea.value.trim().length > 15) {
+        aiDebounceTimer = setTimeout(() => {
+            confirmPrompt.classList.remove('hidden');
+        }, 3000); 
+    }
 });
+
+// 2. Function if they click "No"
+function cancelAIPrompt() {
+    confirmPrompt.classList.add('hidden');
+    clearTimeout(aiDebounceTimer);
+}
+
+// 3. The AI Response Function (Appends to Textarea)
+async function triggerAIResponse() {
+    confirmPrompt.classList.add('hidden');
+    const userText = thoughtsTextarea.value.trim();
+
+    if (typeof puter !== 'undefined') {
+        try {
+            // Visual indicator that AI is "thinking"
+            const originalVal = thoughtsTextarea.value;
+            thoughtsTextarea.value += "\n\n[SYSTEM: ANALYZING INPUT...]";
+            thoughtsTextarea.scrollTop = thoughtsTextarea.scrollHeight;
+
+            const response = await puter.ai.chat(
+                `The user is analyzing science. Here is their note: "${userText}". 
+                 Respond as a critical but encouraging mentor. 
+                 If they have a good point, deepen it. If they are missing something, 
+                 ask a sharp curiosity question. Keep it to 2-3 sentences max. 
+                 Start your response with 'AI INSIGHT:'`
+            );
+
+            const aiText = response?.message?.content || response;
+            
+            // Clean up the "Analyzing" text and append the real response
+            thoughtsTextarea.value = originalVal + `\n\n${aiText}\n\n`;
+            
+            // Save the new combined state
+            localStorage.setItem('aigham_thoughts_content', thoughtsTextarea.value);
+            
+            // Auto-scroll to bottom
+            thoughtsTextarea.scrollTop = thoughtsTextarea.scrollHeight;
+
+        } catch (err) {
+            console.error("AI Debate failed", err);
+            thoughtsTextarea.value += "\n\n[Error: Neural link interrupted.]";
+        }
+    }
+}
 
  
   
