@@ -4856,14 +4856,6 @@ const GEMINI_COOLDOWN = 1500; // ms
 };
   
   const topicKeywords = {
-  physics: {
-    1: { 'motion': ['motion', 'move', 'position', 'speed', 'velocity'] },
-    2: { 'thermodynamics': ['heat', 'temperature', 'entropy', 'thermal'] },
-    3: { 
-      'force': ['force', 'newton', 'push', 'pull', 'gravity'],
-      'energy': ['energy', 'work', 'power', 'joule', 'kinetic', 'potential']
-    }
-  },
   chemistry: {
   1: { 
     'use of models': ['atom', 'matter', 'proton', 'electron', 'neutron', 'nucleus'],
@@ -4892,13 +4884,7 @@ const GEMINI_COOLDOWN = 1500; // ms
         'the particle model': ['particle', 'solid', 'liquid', 'gas', 'states'],
         'scientific investigations': ['mixture', 'dissolve', 'solute', 'solvent', 'saturated'],
       'solutions': ['particle', 'solid', 'liquid', 'gas', 'states']
-    }
-    
-  },
-  biology: {
-    1: { 'cells': ['cell', 'organelle', 'mitochondria', 'membrane', 'cytoplasm'] },
-    2: { 'genetics': ['dna', 'gene', 'heredity', 'allele', 'chromosome'] },
-    3: { 'ecosystems': ['ecology', 'environment', 'food web', 'habitat', 'species'] }
+    }  
   }
 };
   
@@ -4993,24 +4979,22 @@ const GEMINI_COOLDOWN = 1500; // ms
   container.classList.add('show');
 }
 
-   function populateProficiencyLevels() {
+  function populateProficiencyLevels() {
   const container = document.getElementById('step-3a');
   container.innerHTML = '';
   
-  // 1. Add padding-bottom to the container class list so it clears the footer
-  container.className = "hidden grid grid-cols-2 md:grid-cols-2 gap-4 pb-24";
+  // Reset classes: ensure grid and grid-cols-2 are always there.
+  // We remove 'hidden' so the grid can actually calculate its space.
+  container.className = "grid grid-cols-2 gap-4 pb-24 opacity-0"; 
 
   proficiencyLevels.forEach(p => {
     const div = document.createElement('div');
-    
-    // 2. Added flex-col and items-center to ensure vertical stacking
-    div.className = 'card p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-transform hover:scale-105';
+    div.className = 'card p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-transform hover:scale-105 border border-white/10 rounded-xl';
     div.tabIndex = 0;
     
-    // 3. Cleaned up the innerHTML for better spacing
     div.innerHTML = `
       <div class="text-2xl font-bold text-blue-100 leading-none">${p.level}</div>
-      <div class="text-1xl uppercase tracking-wide text-gray-400 mt-1">${p.descriptor}</div>
+      <div class="text-1xl font-semibold uppercase tracking-wide text-gray-400 mt-2">${p.descriptor}</div>
     `;
     
     div.onclick = () => handleProficiencyClick(p.level);
@@ -5019,8 +5003,12 @@ const GEMINI_COOLDOWN = 1500; // ms
     container.appendChild(div);
   });
 
-  setTimeout(() => container.classList.add('show'), 40);
-  container.classList.add('stagger');
+  // Instead of just adding .show, we make sure it stays a grid
+  setTimeout(() => {
+    container.classList.remove('hidden');
+    container.classList.add('show');
+    container.style.opacity = '1'; // Ensure it's visible
+  }, 40);
 }
 
  
@@ -5040,7 +5028,7 @@ function populateSkillLevels() {
     
     // Using <div> tags to force the "Level X" above the description
     div.innerHTML = `
-      <div class="text-2xl uppercase tracking-widest text-blue-400 font-semibold">Level ${s.level}</div>
+      <div class="text-2xl uppercase tracking-widest text-blue-100 font-semibold">Level ${s.level}</div>
       <div class="text-1xl md:text-base text-gray-200 mt-1 font-medium">${s.label}</div>
     `;
     
