@@ -3702,28 +3702,50 @@ function getElPos(n) {
 const elementFactCache = new Map();
 
 
-// --- 🧪 SPECIALIZED ELEMENT SPEECH CONTROLLER ---
+
+// --- 🧪 REFINED ELEMENT SPEECH CONTROLLER ---
 const ElementSpeechAI = {
     synth: window.speechSynthesis,
     currentUtterance: null,
+    clickTimer: null,
+    lastText: "", // Stores the last spoken text for restarting
 
     speak: function(text) {
-        // 1. Force stop any current speech
+        this.lastText = text; // Save for restart logic
         this.synth.cancel(); 
 
-        // 2. Small delay (50ms) ensures the browser clears the queue before new speech
         setTimeout(() => {
             this.currentUtterance = new SpeechSynthesisUtterance(text);
             this.currentUtterance.rate = 1.0;
             this.currentUtterance.pitch = 1.05;
-            
-            // Handle potential errors (like voices not loading)
-            this.currentUtterance.onerror = (e) => console.error("TTS Error:", e);
-            
             this.synth.speak(this.currentUtterance);
         }, 50); 
+    },
+
+    // 🟢 The Logic for Click Interactivity
+    handleInteraction: function() {
+        if (this.clickTimer === null) {
+            // First click: Start 300ms window
+            this.clickTimer = setTimeout(() => {
+                // --- SINGLE CLICK: PAUSE/RESUME ---
+                if (this.synth.speaking) {
+                    this.synth.paused ? this.synth.resume() : this.synth.pause();
+                }
+                this.clickTimer = null;
+            }, 300);
+        } else {
+            // --- DOUBLE CLICK: RESTART ---
+            clearTimeout(this.clickTimer);
+            this.clickTimer = null;
+            if (this.lastText) this.speak(this.lastText);
+        }
     }
 };
+
+// Add listener to the message box so user can click the text to control voice
+document.getElementById('el-msg').addEventListener('click', () => {
+    ElementSpeechAI.handleInteraction();
+});
 
 function initElementsLab() {
     const grid = document.getElementById('periodicTableGrid');
@@ -3748,7 +3770,7 @@ function initElementsLab() {
 
                 if(elPCount === i && elECount === i) {
                     div.classList.add('revealed');
-                    msg.className = "text-green-400 font-mono text-sm tracking-tight leading-relaxed uppercase";
+                    msg.className = "text-green-400 font-mono text-sm tracking-tight leading-relaxed uppercase cursor-pointer"; 
                     msg.innerHTML = `<span class="text-white animate-pulse">ANALYZING SPECIMEN: ${name.toUpperCase()}...</span>`;
 
                     try {
@@ -3774,13 +3796,12 @@ function initElementsLab() {
                             elementFactCache.set(symbol, aiData);
                         }
 
-                        // 🟢 SPEECH: Combined Feedback
+                        // 🟢 SPEECH TRIGGER
                         const combinedText = `${name}. ${aiData.fact} ${aiData.curiosity} ${aiData.reflection}`;
                         ElementSpeechAI.speak(combinedText);
 
                         msg.innerHTML = `
-                            <div class="space-y-3">
-                                <div>
+                            <div class="space-y-3 pointer-events-none"> <div>
                                     <span class="text-white opacity-80 text-[10px] tracking-widest uppercase">System Report</span><br>
                                     <span class="text-white">ANALYSIS COMPLETE:</span> The identified specimen is 
                                     <strong class="text-white underline">${name} (${symbol})</strong>, 
@@ -3809,16 +3830,15 @@ function initElementsLab() {
                     } catch (err) {
                         console.warn("AI Analysis failed", err);
                         const errorMsg = `Identified ${name}. Analysis incomplete.`;
-                        ElementSpeechAI.speak(errorMsg); // Speak the error too
+                        ElementSpeechAI.speak(errorMsg);
                         msg.innerHTML = `<span class="text-white">IDENTIFIED: ${name}</span>. Analysis incomplete.`;
                     }
 
                 } else {
-                    // 🟢 SPEECH: Error Feedback
-                    const errorText = `Identification Error. Target cell ${name} requires ${i} protons. System is currently at ${elPCount} protons.`;
+                    const errorText = `Identification Error. Target cell ${name} requires ${i} protons. System state at ${elPCount}.`;
                     ElementSpeechAI.speak(errorText);
 
-                    msg.className = "text-red-400 font-mono text-sm uppercase";
+                    msg.className = "text-red-400 font-mono text-sm uppercase cursor-pointer";
                     msg.innerHTML = `<strong>Identification Error:</strong> Targeted cell <strong>${name}</strong> 
                                     requires ${i} protons/electrons. Current system state: P:${elPCount}, E:${elECount}.`;
                 }
@@ -3827,6 +3847,8 @@ function initElementsLab() {
         }
     }
 }
+ 
+
 
     function updateElementsLab(dp, de) {
     elPCount = Math.max(0, elPCount + dp); 
