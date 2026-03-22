@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <title>AIGHAM 7 - New</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://js.puter.com/v2/"></script>
@@ -412,6 +412,17 @@ body.theme-nature {
   background: rgba(10, 15, 25, 0.9);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+ /* Apply this to the textarea or the entire modal container */
+#persistent-thoughts {
+    touch-action: manipulation; /* Disables double-tap zoom specifically */
+    user-select: text;         /* Ensures users can still highlight text if needed */
+}
+
+/* If you want to disable double-tap zoom globally for the whole app: */
+html, body {
+    touch-action: manipulation;
 }
   
 /* Custom utility classes since we're using Tailwind components */
@@ -4034,20 +4045,36 @@ thoughtsTextarea.addEventListener('input', () => {
     }
 });
 
-// 2. Specialized Click Controller (Single = Pause, Double = Restart)
+thoughtsTextarea.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 1) return; // Allow multi-touch pinch
+}, { passive: true });
+
+// 2. 🟢 CLICK LOGIC (1 Click: Pause/Resume | 2 Clicks: Restart)
 thoughtsTextarea.addEventListener('click', () => {
     if (FloatingThoughtAI.clickTimer === null) {
-        // Single Click detected: Wait for second click
+        // First click detected: Start a timer to wait for a second click
         FloatingThoughtAI.clickTimer = setTimeout(() => {
+            // --- SINGLE CLICK ACTION (Pause / Resume) ---
             if (FloatingThoughtAI.synth.speaking) {
-                FloatingThoughtAI.synth.paused ? FloatingThoughtAI.synth.resume() : FloatingThoughtAI.synth.pause();
+                if (FloatingThoughtAI.synth.paused) {
+                    FloatingThoughtAI.synth.resume();
+                    console.log("AI Speech Resumed");
+                } else {
+                    FloatingThoughtAI.synth.pause();
+                    console.log("AI Speech Paused");
+                }
             }
+            // Reset timer after executing single click
             FloatingThoughtAI.clickTimer = null;
-        }, 300); 
+        }, 300); // 300ms window is the "sweet spot" for human fingers
+        
     } else {
-        // Double Click detected: Cancel pause and restart speech
+        // --- DOUBLE CLICK ACTION (Restart) ---
+        // Second click arrived within 300ms, so cancel the single-click timer
         clearTimeout(FloatingThoughtAI.clickTimer);
         FloatingThoughtAI.clickTimer = null;
+        
+        console.log("AI Speech Restarting...");
         FloatingThoughtAI.restartSpeech();
     }
 });
