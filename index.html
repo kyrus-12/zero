@@ -1466,7 +1466,16 @@ footer.global-nav {
     <textarea id="persistent-thoughts" 
       class="w-full h-80 bg-blue-950/20 border border-blue-500/20 rounded-2xl p-5 text-blue-50 outline-none focus:border-blue-400/50 transition-all text-lg leading-relaxed placeholder:text-blue-900"
       placeholder="Capture your thoughts here... they will stay even if you refresh!"></textarea>
-    <div class="mt-6 flex justify-between items-center">
+    <div id="ai-thought-feedback" class="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hidden transition-all duration-500">
+        <div class="flex items-center gap-2 mb-1">
+            <span class="text-[10px] bg-emerald-500 text-black px-1.5 rounded font-black uppercase">AI Insight</span>
+            <span id="ai-status-pulse" class="text-[10px] text-emerald-400 font-mono animate-pulse">ANALYZING...</span>
+        </div>
+        <p id="ai-feedback-text" class="text-xs text-emerald-100 italic leading-relaxed">
+            Reading your thoughts...
+        </p>
+    </div>
+   <div class="mt-6 flex justify-between items-center">
       <span class="text-[10px] text-blue-400/50 font-mono">AUTOSAVE: ENABLED</span>
       <button class="btn btn-primary px-10 rounded-full" onclick="closeThoughts()">Save & Close</button>
     </div>
@@ -3979,6 +3988,43 @@ function applyBrainSide(side) {
         thoughtLogicWrapper.classList.add('right-8');
     }
 }
+
+ let aiDebounceTimer;
+const feedbackContainer = document.getElementById('ai-thought-feedback');
+const feedbackText = document.getElementById('ai-feedback-text');
+
+thoughtsTextarea.addEventListener('input', () => {
+    // 1. Existing Auto-save logic
+    localStorage.setItem('aigham_thoughts_content', thoughtsTextarea.value);
+
+    // 2. Clear previous timer
+    clearTimeout(aiDebounceTimer);
+
+    // 3. Wait 2 seconds after typing stops to call AI
+    aiDebounceTimer = setTimeout(async () => {
+        const content = thoughtsTextarea.value.trim();
+        
+        // Only trigger if there's enough content to analyze
+        if (content.length > 10 && typeof puter !== 'undefined') {
+            try {
+                feedbackContainer.classList.remove('hidden');
+                feedbackText.innerText = "Processing your insight...";
+
+                const response = await puter.ai.chat(
+                    `The user is writing notes about science and elements. 
+                    Based on this text: "${content}", provide a short (one-sentence) 
+                    encouragement or a deep reflective question to help them learn more. 
+                    Keep it supportive and intellectual.`
+                );
+
+                const aiResponse = response?.message?.content || response;
+                feedbackText.innerText = aiResponse;
+            } catch (err) {
+                console.warn("Puter AI Feedback failed", err);
+            }
+        }
+    }, 2000); // 2000ms pause required
+});
 
  
   
