@@ -3443,36 +3443,54 @@ function updateFractionDisplay(target, mm, m, v, g) {
 
     const cancel = "text-red-400 line-through decoration-2";
 const box = "inline-flex flex-col items-center align-middle mx-1";
-const line = "border-t border-white w-full text-center px-2";
+const line = "border-t border-white w-full text-center px-2 mt-1"; // Added margin for spacing
 
-let html = `<div class="flex items-center justify-center space-x-2 text-sm">`;
+let html = `<div class="flex items-center justify-center space-x-4 text-sm font-mono">`;
 
 if (target === 'sol-grams') {
-    // ? g = L * (mol/L) * (g/mol)
-    html += `<span>? g = </span>`;
-    html += `<div class="${box}">${v} <span class="${cancel}">L</span></div>`;
+    // Equation: g = V(L) * M(mol/L) * MM(g/mol)
+    html += `<div class="flex items-center"><span>? g = </span></div>`;
+    
+    // Volume (L / 1)
+    html += `<div class="${box}"><div>${v} <span class="${cancel}">L</span></div><div class="${line}">1</div></div>`;
     html += `<span>×</span>`;
-    html += `<div class="${box}">${m} <span class="${cancel}">mol</span> / <span class="${cancel}">L</span></div>`;
+    
+    // Molarity (mol / L)
+    html += `<div class="${box}"><div>${m} <span class="${cancel}">mol</span></div><div class="${line}"><span class="${cancel}">L</span></div></div>`;
     html += `<span>×</span>`;
-    html += `<div class="${box}">${mm} g / <span class="${cancel}">mol</span></div>`;
+    
+    // Molar Mass (g / mol)
+    html += `<div class="${box}"><div>${mm} g</div><div class="${line}"><span class="${cancel}">mol</span></div></div>`;
 } 
 else if (target === 'sol-molarity') {
-    // ? mol/L = g / (g/mol) / L
-    html += `<span>? mol/L = </span>`;
-    html += `<div class="${box}">${g} <span class="${cancel}">g</span></div>`;
-    html += `<span>÷</span>`;
-    html += `<div class="${box}">${mm} <span class="${cancel}">g</span>/mol</div>`;
-    html += `<span>÷</span>`;
-    html += `<div class="${box}">${v} L</div>`;
+    // Equation: M = g / (MM * V)
+    html += `<div class="flex items-center"><span>? mol/L = </span></div>`;
+    
+    // Mass (g / 1)
+    html += `<div class="${box}"><div>${g} <span class="${cancel}">g</span></div><div class="${line}">1</div></div>`;
+    html += `<span>×</span>`;
+    
+    // 1 / Molar Mass (mol / g) - Note: Inverting for cancellation
+    html += `<div class="${box}"><div>1 mol</div><div class="${line}">${mm} <span class="${cancel}">g</span></div></div>`;
+    html += `<span>×</span>`;
+    
+    // 1 / Volume (1 / L)
+    html += `<div class="${box}"><div>1</div><div class="${line}">${v} L</div></div>`;
 } 
 else if (target === 'sol-volume') {
-    // ? L = g / (g/mol) / (mol/L)
-    html += `<span>? L = </span>`;
-    html += `<div class="${box}">${g} <span class="${cancel}">g</span></div>`;
-    html += `<span>÷</span>`;
-    html += `<div class="${box}">${mm} <span class="${cancel}">g</span>/<span class="${cancel}">mol</span></div>`;
-    html += `<span>÷</span>`;
-    html += `<div class="${box}">${m} <span class="${cancel}">mol</span>/L</div>`;
+    // Equation: V = g / (MM * M)
+    html += `<div class="flex items-center"><span>? L = </span></div>`;
+    
+    // Mass (g / 1)
+    html += `<div class="${box}"><div>${g} <span class="${cancel}">g</span></div><div class="${line}">1</div></div>`;
+    html += `<span>×</span>`;
+    
+    // 1 / Molar Mass (mol / g)
+    html += `<div class="${box}"><div><span class="${cancel}">mol</span></div><div class="${line}">${mm} <span class="${cancel}">g</span></div></div>`;
+    html += `<span>×</span>`;
+    
+    // 1 / Molarity (L / mol)
+    html += `<div class="${box}"><div>1 L</div><div class="${line}">${m} <span class="${cancel}">mol</span></div></div>`;
 }
 
 html += `</div>`;
