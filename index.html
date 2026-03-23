@@ -3332,31 +3332,104 @@ async function renderStoryAndData() {
     scratchpad.value = baseText + "[SCANNING FOR SAFETY DATA...]";
 
     // --- 4. THE PUTER AI (FAST FEEDBACK) ---
-    clearTimeout(aiDebounceTimer);
-    aiDebounceTimer = setTimeout(async () => {
-        // AI triggers only if we have a chemical name and a target mission
-        if (comp !== "---" && comp.length >= 2 && target) {
-            try {
-                // Short, aggressive prompt for maximum speed
-                const safetyResponse = await puter.ai.chat(
-                    `Safety for ${comp}: List Hazard, PPE, Disposal. Max 30 words.`
-                );
-                
-                // Final render
-                scratchpad.value = baseText + `⚠️ AI SAFETY FEEDBACK:\n${safetyResponse}\n`;
-            } catch (err) {
-                scratchpad.value = baseText + `\n[Safety Analysis Offline]\n`;
+   clearTimeout(aiDebounceTimer);
+aiDebounceTimer = setTimeout(async () => {
+    // AI triggers only if we have a chemical name and a target mission
+    if (comp !== "---" && comp.length >= 2 && target) {
+        try {
+            // Expanded prompt to include the "Reliability Test" (Home/School Lab)
+            const prompt = `Act as a Science Safety Officer. 
+                Chemical: ${comp}. 
+                Provide: 
+                1. SAFETY REPORT: (Hazard, PPE, Disposal - max 25 words). 
+                2. VERIFICATION LAB: A simple, safe, 1-sentence experiment for home or school to check a property of ${comp}.
+                Return text in this format: SAFETY REPORT: [text] | VERIFICATION LAB: [text]`;
+
+            const response = await puter.ai.chat(prompt, { model: 'gpt-4o-mini' });
+            const rawContent = response?.message?.content || response;
+            
+            // Split the AI response by the pipe character
+            const parts = rawContent.split('|');
+            const safetyText = parts[0]?.trim() || "Safety analysis unavailable.";
+            const labActivity = parts[1]?.trim() || "No safe home experiment identified.";
+
+            // Final render to the UI Scratchpad
+            scratchpad.value = baseText + 
+                `⚠️ AI SAFETY FEEDBACK:\n${safetyText}\n\n` +
+                `🔬 VERIFICATION LAB (HOME/SCHOOL):\n${labActivity}\n`;
+            
+            // 🟢 TRIGGER SPEECH
+            // The AI will read the safety briefing followed by the lab experiment
+            const speechText = `Safety briefing for ${comp}. ${safetyText.replace('SAFETY REPORT:', '')} ` +
+                               `To check the reliability of ${comp} in real life, ${labActivity.replace('VERIFICATION LAB:', '')}`;
+            
+            SafetySpeechAI.speak(speechText);
+
+        } catch (err) {
+            scratchpad.value = baseText + `\n[Safety Analysis Offline]\n`;
+            console.error("Safety AI Error:", err);
+        }
+    }
+}, 500); 
+
+if (typeof updateFractionDisplay === "function") {
+    updateFractionDisplay(target, mm, m, v, g);
+   }
+ }
+
+ // --- 🧪 SAFETY SCRATCHPAD SPEECH CONTROLLER ---
+const SafetySpeechAI = {
+    synth: window.speechSynthesis,
+    currentUtterance: null,
+    clickTimer: null,
+    lastSafetyReport: "", 
+
+    speak: function(text) {
+        this.lastSafetyReport = text; // Stores text for "Restart"
+        this.synth.cancel(); 
+        
+        setTimeout(() => {
+            this.currentUtterance = new SpeechSynthesisUtterance(text);
+            this.currentUtterance.rate = 1.05; 
+            this.currentUtterance.pitch = 1.0;
+            this.synth.speak(this.currentUtterance);
+        }, 50);
+    },
+
+    handleInteraction: function() {
+        if (this.clickTimer === null) {
+            // FIRST CLICK: Wait 300ms for a second click
+            this.clickTimer = setTimeout(() => {
+                // SINGLE CLICK logic: Pause or Resume
+                if (this.synth.speaking) {
+                    if (this.synth.paused) {
+                        this.synth.resume();
+                        console.log("Safety Audio: Resumed");
+                    } else {
+                        this.synth.pause();
+                        console.log("Safety Audio: Paused");
+                    }
+                }
+                this.clickTimer = null;
+            }, 300);
+        } else {
+            // SECOND CLICK: Cancel the pause timer and restart the speech
+            clearTimeout(this.clickTimer);
+            this.clickTimer = null;
+            if (this.lastSafetyReport) {
+                console.log("Safety Audio: Restarting...");
+                this.speak(this.lastSafetyReport);
             }
         }
-    }, 500); // Reduced to 500ms for faster response
-
-    if (typeof updateFractionDisplay === "function") {
-        updateFractionDisplay(target, mm, m, v, g);
     }
-}
+};
 
-    
-    
+// Assuming 'scratchpad' is the ID of your textarea
+document.getElementById('scratchpad').addEventListener('click', () => {
+    SafetySpeechAI.handleInteraction();
+});
+
+ 
 // --- DIMENSIONAL ANALYSIS DISPLAY (The "Realistic" Part) ---
 function updateFractionDisplay(target, mm, m, v, g) {
     const display = document.getElementById('formulaDisplay');
