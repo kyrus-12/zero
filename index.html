@@ -3377,7 +3377,8 @@ if (typeof updateFractionDisplay === "function") {
    }
  }
 
- // --- 🧪 SAFETY SCRATCHPAD SPEECH CONTROLLER ---
+ 
+// --- 🧪 SAFETY SCRATCHPAD SPEECH CONTROLLER ---
 const SafetySpeechAI = {
     synth: window.speechSynthesis,
     currentUtterance: null,
@@ -3385,7 +3386,7 @@ const SafetySpeechAI = {
     lastSafetyReport: "", 
 
     speak: function(text) {
-        this.lastSafetyReport = text; // Stores text for "Restart"
+        this.lastSafetyReport = text; 
         this.synth.cancel(); 
         
         setTimeout(() => {
@@ -3398,36 +3399,38 @@ const SafetySpeechAI = {
 
     handleInteraction: function() {
         if (this.clickTimer === null) {
-            // FIRST CLICK: Wait 300ms for a second click
             this.clickTimer = setTimeout(() => {
-                // SINGLE CLICK logic: Pause or Resume
-                if (this.synth.speaking) {
+                // Check if synth is actually talking/paused to avoid errors
+                if (this.synth.speaking || this.synth.paused) {
                     if (this.synth.paused) {
                         this.synth.resume();
-                        console.log("Safety Audio: Resumed");
                     } else {
                         this.synth.pause();
-                        console.log("Safety Audio: Paused");
                     }
                 }
                 this.clickTimer = null;
             }, 300);
         } else {
-            // SECOND CLICK: Cancel the pause timer and restart the speech
             clearTimeout(this.clickTimer);
             this.clickTimer = null;
             if (this.lastSafetyReport) {
-                console.log("Safety Audio: Restarting...");
                 this.speak(this.lastSafetyReport);
             }
         }
     }
 };
 
-// Assuming 'scratchpad' is the ID of your textarea
-document.getElementById('scratchpad').addEventListener('click', () => {
-    SafetySpeechAI.handleInteraction();
-});
+// 🟢 SAFE INITIALIZATION
+// This prevents the "Breaking" by checking if the element exists first
+const scratchpadElement = document.getElementById('scratchpad');
+
+if (scratchpadElement) {
+    scratchpadElement.addEventListener('click', () => {
+        SafetySpeechAI.handleInteraction();
+    });
+} else {
+    console.warn("Element with ID 'scratchpad' not found. Speech listener not attached.");
+}
 
  
 // --- DIMENSIONAL ANALYSIS DISPLAY (The "Realistic" Part) ---
@@ -3438,42 +3441,41 @@ function updateFractionDisplay(target, mm, m, v, g) {
         return;
     }
 
-    // CSS for fractions and cancellations
     const cancel = "text-red-400 line-through decoration-2";
-    const box = "inline-flex flex-col items-center align-middle mx-1";
-    const line = "border-t border-white w-full text-center px-2";
+const box = "inline-flex flex-col items-center align-middle mx-1";
+const line = "border-t border-white w-full text-center px-2";
 
-    let html = `<div class="flex items-center justify-center space-x-2 text-sm">`;
+let html = `<div class="flex items-center justify-center space-x-2 text-sm">`;
 
-    if (target === 'sol-grams') {
-    // g = V × M × MM
-html += `<span>? g = </span>`;
-html += `<div class="${box}">${v} L</div>`;
-html += `<span>×</span>`;
-html += `<div class="${box}">${m} mol / L</div>`;
-html += `<span>×</span>`;
-html += `<div class="${box}">${mm} g / mol</div>`;
+if (target === 'sol-grams') {
+    // ? g = L * (mol/L) * (g/mol)
+    html += `<span>? g = </span>`;
+    html += `<div class="${box}">${v} <span class="${cancel}">L</span></div>`;
+    html += `<span>×</span>`;
+    html += `<div class="${box}">${m} <span class="${cancel}">mol</span> / <span class="${cancel}">L</span></div>`;
+    html += `<span>×</span>`;
+    html += `<div class="${box}">${mm} g / <span class="${cancel}">mol</span></div>`;
 } 
 else if (target === 'sol-molarity') {
-// M = g / (MM × V)
-html += `<span>? mol/L = </span>`;
-html += `<div class="${box}">${g} g</div>`;
-html += `<span>÷</span>`;
-html += `<div class="${box}">${mm} g/mol</div>`;
-html += `<span>÷</span>`;
-html += `<div class="${box}">${v} L</div>`;
+    // ? mol/L = g / (g/mol) / L
+    html += `<span>? mol/L = </span>`;
+    html += `<div class="${box}">${g} <span class="${cancel}">g</span></div>`;
+    html += `<span>÷</span>`;
+    html += `<div class="${box}">${mm} <span class="${cancel}">g</span>/mol</div>`;
+    html += `<span>÷</span>`;
+    html += `<div class="${box}">${v} L</div>`;
 } 
 else if (target === 'sol-volume') {
-    // V = g / (MM × M)
-html += `<span>? L = </span>`;
-html += `<div class="${box}">${g} g</div>`;
-html += `<span>÷</span>`;
-html += `<div class="${box}">${mm} g/mol</div>`;
-html += `<span>÷</span>`;
-html += `<div class="${box}">${m} mol/L</div>`;
+    // ? L = g / (g/mol) / (mol/L)
+    html += `<span>? L = </span>`;
+    html += `<div class="${box}">${g} <span class="${cancel}">g</span></div>`;
+    html += `<span>÷</span>`;
+    html += `<div class="${box}">${mm} <span class="${cancel}">g</span>/<span class="${cancel}">mol</span></div>`;
+    html += `<span>÷</span>`;
+    html += `<div class="${box}">${m} <span class="${cancel}">mol</span>/L</div>`;
 }
-    
-    html += `</div>`;
+
+html += `</div>`;
     display.innerHTML = html;
 }
 
