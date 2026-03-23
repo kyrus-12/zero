@@ -1364,7 +1364,7 @@ footer.global-nav {
 <div class="max-w-4xl px-6 flex justify-around">
 <div class="nav-item" onclick="goHome()"><div>🏠</div><div>Home</div></div>
 <div class="nav-item" onclick="showInfo()"><div>ℹ️</div><div>Info</div></div>
- <div class="nav-item" onclick="toggleLabMenu()"> <div id="lab-icon">🧪</div><div>Lab</div></div>
+ <div class="nav-item" onclick="toggleLabMenu()"> <div id="lab-icon">⚛️</div><div>Lab</div></div>
   <div class="nav-item" onclick="openSettings()"><div>⚙️</div><div>Settings</div></div>
 </div>
 </footer>
@@ -3587,36 +3587,46 @@ async function updateElectronLab() {
 
     // Debounce to prevent API spam while user types
     clearTimeout(electronLabTimeout);
-    electronLabTimeout = setTimeout(async () => {
-        try {
-            if (typeof puter !== 'undefined' && puter.ai?.chat) {
-                const prompt = `Act as a Quantum Lab AI. Element: ${name} (${protons} protons). User input: ${electrons} electrons. Valence: ${valenceCount} in shell ${currentShellIndex + 1}. 
+electronLabTimeout = setTimeout(async () => {
+    try {
+        if (typeof puter !== 'undefined' && puter.ai?.chat) {
+            // Updated Prompt with Hydrogen Importance and Care instructions
+            const prompt = `Act as a Quantum Lab AI. Element: ${name} (${protons} protons). 
+                User input: ${electrons} electrons. Valence: ${valenceCount} in shell ${currentShellIndex + 1}. 
                 Based on electron shells and electromagnetism, provide:
                 1. Status (STABLE, ION, or IMPOSSIBLE)
                 2. Reactivity Score (0-100)
                 3. A professional diagnostic sentence.
-                Return ONLY JSON: {"status":"str", "reactivity":num, "message":"str", "impossible":bool}`;
+                4. MODEL IMPORTANCE: Explain why Bohr/Quantum models are vital for ${name === 'Hydrogen' ? 'Hydrogen (the fundamental atom)' : name}.
+                5. SAFETY: A 1-sentence tip on how to handle or store this element safely.
+                Return ONLY JSON: {"status":"str", "reactivity":num, "message":"str", "importance":"str", "safety":"str", "impossible":bool}`;
 
-                const response = await puter.ai.chat(prompt, { model: 'gemini-2.0-flash' });
-                const content = response?.message?.content || response;
-                const data = JSON.parse(content.replace(/```json|```/g, '').trim());
+            const response = await puter.ai.chat(prompt, { model: 'gpt-4o-mini' });
+            const content = response?.message?.content || response;
+            const data = JSON.parse(content.replace(/```json|```/g, '').trim());
 
-                electronLabCache.set(cacheKey, data);
-                renderElectronUI(data, protons, electrons, name, valenceCount, target, diff);
-            }
-        } catch (err) {
-            console.error("Lab AI Error:", err);
-            result.innerHTML = `<div class="text-red-400 text-[10px]">DIAGNOSTIC LINK LOST</div>`;
+            electronLabCache.set(cacheKey, data);
+            
+            // 🟢 TRIGGER SPEECH
+            const speechText = `${data.status} report for ${name}. ${data.message} Regarding models: ${data.importance} Safety tip: ${data.safety}`;
+            ElectronLabAI.speak(speechText);
+
+            renderElectronUI(data, protons, electrons, name, valenceCount, target, diff);
         }
-    }, 600);
-}
+    } catch (err) {
+        console.error("Lab AI Error:", err);
+        const result = document.getElementById("lab-result");
+        result.innerHTML = `<div class="text-red-400 text-[10px]">DIAGNOSTIC LINK LOST</div>`;
+    }
+}, 600);
+ }
 
-// 4. UI RENDERER
+ 
+    // 4. UI RENDERER (Updated with Importance and Safety)
 function renderElectronUI(data, protons, electrons, name, valenceCount, target, diff) {
     const result = document.getElementById("lab-result");
     const nucleus = document.getElementById("lab-nucleus");
     
-    // Determine base color based on charge
     let colorClass = (electrons === protons) ? "bg-green-400 text-black" : (diff < 0 ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white');
     
     if (data.impossible) {
@@ -3626,17 +3636,18 @@ function renderElectronUI(data, protons, electrons, name, valenceCount, target, 
         nucleus.classList.add("nucleus-unstable");
     }
 
-    // Reactivity color bar logic
     const barColor = data.reactivity > 75 ? 'bg-red-400' : (data.reactivity > 30 ? 'bg-yellow-400' : 'bg-emerald-400');
 
-    result.className = `p-4 rounded-lg font-mono shadow-inner border-l-4 border-black/20 ${colorClass} transition-all duration-300`;
+    // Added pointer-cursor so user knows it's clickable for speech
+    result.className = `p-4 rounded-lg font-mono shadow-inner border-l-4 border-black/20 ${colorClass} transition-all duration-300 cursor-pointer select-none`;
+    
     result.innerHTML = `
-        <div class="flex justify-between items-center border-b border-black/10 pb-1 mb-2">
+        <div class="flex justify-between items-center border-b border-black/10 pb-1 mb-2 pointer-events-none">
             <span class="font-black text-xs uppercase tracking-widest">> ${data.status} ${name}</span>
             <span class="text-[9px] font-bold">NET: ${diff > 0 ? '+' : ''}${diff}</span>
         </div>
         
-        <div class="mb-3">
+        <div class="mb-3 pointer-events-none">
             <div class="flex justify-between text-[8px] mb-1 font-bold uppercase">
                 <span>Reactivity Score</span>
                 <span>${data.reactivity}%</span>
@@ -3646,14 +3657,64 @@ function renderElectronUI(data, protons, electrons, name, valenceCount, target, 
             </div>
         </div>
 
-        <div class="text-[9px] mb-1"><b>Z:</b> ${protons} | <b>E:</b> ${electrons} | <b>VALENCE:</b> ${valenceCount}/${target}</div>
-        <div class="text-[10px] leading-tight italic border-t border-black/5 pt-2">
-            "${data.message}"
+        <div class="text-[9px] mb-2 pointer-events-none">
+            <b>Z:</b> ${protons} | <b>E:</b> ${electrons} | <b>VALENCE:</b> ${valenceCount}/${target}
+        </div>
+
+        <div class="space-y-2 text-[9px] leading-tight border-t border-black/10 pt-2 pointer-events-none">
+            <p><strong>DIAGNOSTIC:</strong> "${data.message}"</p>
+            <p><strong>MODEL IMPORTANCE:</strong> ${data.importance}</p>
+            <div class="p-1.5 bg-black/10 rounded border-l-2 border-black/30 italic">
+                <strong>CARE:</strong> ${data.safety}
+            </div>
+        </div>
+        
+        <div class="mt-2 text-[7px] text-center opacity-50 pointer-events-none uppercase tracking-tighter">
+            Tap to Pause • Double Tap to Restart
         </div>
     `;
 }
-    
-    
+
+ 
+ 
+    // ---  ELECTRON LAB SPECIALIZED SPEECH CONTROLLER ---
+const ElectronLabAI = {
+    synth: window.speechSynthesis,
+    currentUtterance: null,
+    clickTimer: null,
+    lastReport: "",
+
+    speak: function(text) {
+        this.lastReport = text;
+        this.synth.cancel();
+        setTimeout(() => {
+            this.currentUtterance = new SpeechSynthesisUtterance(text);
+            this.currentUtterance.rate = 1.0;
+            this.currentUtterance.pitch = 0.95; // Deep "Lab AI" voice
+            this.synth.speak(this.currentUtterance);
+        }, 50);
+    },
+
+    handleInteraction: function() {
+        if (this.clickTimer === null) {
+            this.clickTimer = setTimeout(() => {
+                if (this.synth.speaking) {
+                    this.synth.paused ? this.synth.resume() : this.synth.pause();
+                }
+                this.clickTimer = null;
+            }, 300);
+        } else {
+            clearTimeout(this.clickTimer);
+            this.clickTimer = null;
+            if (this.lastReport) this.speak(this.lastReport);
+        }
+    }
+};
+
+// Apply the click listener to the result box
+document.getElementById("lab-result").addEventListener('click', () => {
+    ElectronLabAI.handleInteraction();
+});
     
       function closeElementsLab() {
     document.getElementById('elementsLabModal').classList.add('hidden');
